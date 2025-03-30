@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinterest Style Gallery with Captions</title>
+    <style>
+       body, html {
+           margin: 0;
+           padding: 0;
+           min-height: 100vh;
+           overflow-x: hidden;
+           overflow-y: auto;
+           padding-top: 30px;
+           font-family: Arial, sans-serif;
+       }
+       
+       /* Navigation bar background styles */
+       .navbar-bg {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           padding: 30px 20px;
+           z-index: 10;
+           backdrop-filter: blur(8px);
+           -webkit-backdrop-filter: blur(10px);
+           box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+           border-bottom: 1px solid rgba(255, 255, 255, 0.199);
+       }
+       
+       /* Navigation buttons container styles */
+       .navbar-buttons {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           padding: 10px 20px;
+           z-index: 11;
+           display: flex;
+           justify-content: flex-end;
+           gap: 15px;
+           box-sizing: border-box;
+       }
+       
+       /* Navigation links */
+       .navbar-buttons a {
+           color: white;
+           text-decoration: none;
+           padding: 10px 15px;
+           font-size: 16px;
+           font-weight: bold;
+           border-radius: 16px;
+           transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+           white-space: nowrap;
+           transition: transform 0.3s ease-out, margin 0.3s ease-out;
+           backdrop-filter: blur(2px);
+           -webkit-backdrop-filter: blur(8px);
+           background-color: rgba(255, 255, 255, 0.1);
+       }
+       
+       /* Hover effect */
+       .navbar-buttons a:hover {
+           transform: scale(1.3) translateY(10px);
+           background-color: rgba(255, 255, 255, 0.15);
+           box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+           border-bottom: none;
+       }
+       
+       /* Push effect for adjacent buttons */
+       .navbar-buttons a:hover + a,
+       .navbar-buttons a:has(+ a:hover) {
+           transform: scale(1.1);
+           margin: 0 8px;
+       }
+       
+       /* Active page link */
+       .navbar-buttons a.active {
+           background-color: #ffffff;
+           color: #333333;
+       }
+       
+       /* Media Queries for Mobile Responsiveness */
+       @media (max-width: 768px) {
+           .navbar-buttons {
+               padding: 5px 10px; /* Reduce padding */
+               gap: 8px; /* Reduce gap */
+           }
+           .navbar-buttons a {
+               font-size: 14px; /* Smaller font size */
+               padding: 8px 12px; /* Adjust padding */
+           }
+           .navbar-bg {
+           padding: 22px 20px;
+       }
+       }
+       
+       @media (max-width: 480px) {
+           .navbar-buttons a {
+               font-size: 12px; /* Even smaller font size */
+               padding: 6px 10px; /* Adjust padding */
+           }
+           .navbar-bg {
+           padding: 18px 20px;
+       }
+       
+       }
+       
+       
+
+
+        #backgroundWrapper {
+            width: 100%;
+            height: 100%;
+            position: fixed; /* Fixed position background */
+            top: 0;
+            left: 0;
+            z-index: -1; /* Behind gallery */
+        }
+
+        .background-container {
+            position: fixed;
+            top: -5%;
+            left: -5%;
+            width: 110%;
+            height: 110%;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 1s ease-in-out;
+            z-index: 1;
+
+            filter: blur(5px);
+        }
+
+        .gallery {
+            column-count: 6;
+            column-gap: 20px;
+            padding: 20px;
+            position: relative;
+            z-index: 2; /* Above background */
+        }
+
+        .gallery-item {
+            margin-bottom: 20px;
+            break-inside: avoid;
+            position: relative;
+            background: rgba(255, 255, 255, 0.021); 
+            padding: 3% 3% 1% 3%; 
+            border-radius: 8px;
+            font-family: sans-serif;
+            text-align: left;
+            white-space: normal;
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(10px); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); 
+            border: 1px solid rgba(255, 255, 255, 0.199);
+        }
+
+        .image-box {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .image-box img {
+            width: 100%;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        .gallery-item:hover .image-box img {
+            transform: scale(1.1);
+        }
+        .caption-container {
+            margin-top: 5px;
+        }
+        .caption {
+            text-align: left;
+            font-size: 0.9em;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1200px) {
+            .gallery { column-count: 5; column-gap: 12px; }
+        }
+        @media (max-width: 1024px) {
+            .gallery { column-count: 4; column-gap: 10px; }
+        }
+        @media (max-width: 768px) {
+            .gallery { column-count: 3; column-gap: 8px; }
+        }
+        @media (max-width: 480px) {
+            .gallery { column-count: 2; column-gap: 6px; }
+        }
+        @media (max-width: 320px) {
+            .gallery { column-count: 2; column-gap: 6px; }
+        }
+
+
+
+
+
+
+    </style>
+</head>
+<body>
+
+    
+
+
+    <!-- Navigation Bar -->
+    <div class="navbar-bg"></div>
+    <div class="navbar-buttons">
+        <a href="Rahat.html">Home</a>
+        <a href="Project.html">Project</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="about.html">About</a>        
+    </div>
+
+    <div id="backgroundWrapper">
+        <div class="background-container"></div>
+        <div class="background-container"></div>
+    </div>
+    <div class="gallery" id="imageGallery">
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('aquarium.html')">
+                <img src="Thumbnail/aquarium-thumbnail.jpg" alt="Image 1">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 1</p>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page2.html')">
+                <img src="Thumbnail/image2.jpg" alt="Image 2">
+
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 5</p>
+            </div>
+        </div>
+
+        
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page3.html')">
+                <img src="Thumbnail/image3.jpg" alt="Image 3">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 2</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page4.html')">
+                <img src="Thumbnail/image4.jpg" alt="Image 4">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 3</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page5.html')">
+                <img src="Thumbnail/image5.jpg" alt="Image 5">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 4</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page6.html')">
+                <img src="Thumbnail/image6.jpg" alt="Image 6">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 5</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page7.html')">
+                <img src="Thumbnail/image7.jpg" alt="Image 7">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 6</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page8.html')">
+                <img src="Thumbnail/image1.jpg" alt="Image 1">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 7</p>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page9.html')">
+                <img src="Thumbnail/image2.jpg" alt="Image 2">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 7</p>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page10.html')">
+                <img src="Thumbnail/image3.jpg" alt="Image 3">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 5</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page11.html')">
+                <img src="Thumbnail/image4.jpg" alt="Image 4">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 6</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page12.html')">
+                <img src="Thumbnail/image5.jpg" alt="Image 5">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 7</p>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page13.html')">
+                <img src="Thumbnail/image6.jpg" alt="Image 6">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 6</p>
+            </div>
+        </div>
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page14.html')">
+                <img src="Thumbnail/image3.jpg" alt="Image 7">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 7</p>
+            </div>
+        </div>
+
+
+
+        <div class="gallery-item">
+            <div class="image-box" onclick="goToPage('page15.html')">
+                <img src="Thumbnail/image1.jpg" alt="Image 1">
+            </div>
+            <div class="caption-container">
+                <p class="caption">Image 5</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function goToPage(pageUrl) {
+            window.location.href = pageUrl;
+        }
+
+        const backgroundContainers = document.querySelectorAll('.background-container');
+        const currentBackground = backgroundContainers[0];
+        const nextBackground = backgroundContainers[1];
+
+        let focalX = 73;
+        let focalY = 50;
+
+        function updateBackgroundPosition() {
+            currentBackground.style.backgroundPosition = `${focalX}% ${focalY}%`;
+            nextBackground.style.backgroundPosition = `${focalX}% ${focalY}%`;
+        }
+
+        updateBackgroundPosition();
+
+        const images = [
+            'backgroundImage/image1.jpg',
+            'backgroundImage/image2.jpg',
+            'backgroundImage/image3.jpg',
+        ];
+
+        // Retrieve the last saved image index from localStorage (or default to 0)
+        let imageIndex = localStorage.getItem('imageIndex') ? parseInt(localStorage.getItem('imageIndex')) : 0;
+
+        function setSequentialBackground() {
+            nextBackground.style.backgroundImage = `url('${images[imageIndex]}')`;
+            nextBackground.style.opacity = 1;
+
+            setTimeout(() => {
+                currentBackground.style.backgroundImage = nextBackground.style.backgroundImage;
+                currentBackground.style.opacity = 1;
+                nextBackground.style.opacity = 0;
+            }, 1000);
+
+            // Save the current image index to localStorage before moving to the next one
+            localStorage.setItem('imageIndex', imageIndex);
+
+            imageIndex = (imageIndex + 1) % images.length;
+        }
+
+        setSequentialBackground();
+        setInterval(setSequentialBackground, 30000);
+
+
+
+
+        
+    </script>
+</body>
+</html>
+
+
+
+
+

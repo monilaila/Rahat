@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Background with Fade Transition</title>
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            
+        }
+
+  /* Navigation bar background styles */
+  .navbar-bg {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           padding: 25px 20px;
+           z-index: 10;
+           backdrop-filter: blur(8px);
+           -webkit-backdrop-filter: blur(10px);
+           box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+           border-bottom: 1px solid rgba(255, 255, 255, 0.199);
+       }
+       
+       /* Navigation buttons container styles */
+       .navbar-buttons {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           padding: 5px 20px;
+           z-index: 11;
+           display: flex;
+           justify-content: flex-end;
+           gap: 15px;
+           box-sizing: border-box;
+       }
+       
+       /* Navigation links */
+       .navbar-buttons a {
+           color: white;
+           text-decoration: none;
+           padding: 10px 15px;
+           font-size: 16px;
+           font-weight: bold;
+           border-radius: 16px;
+           transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+           white-space: nowrap;
+           transition: transform 0.3s ease-out, margin 0.3s ease-out;
+           backdrop-filter: blur(2px);
+           -webkit-backdrop-filter: blur(8px);
+           /* background-color: rgba(255, 255, 255, 0.1); */
+       }
+       
+       /* Hover effect */
+       .navbar-buttons a:hover {
+           transform: scale(1.3) translateY(10px);
+           background-color: rgba(255, 255, 255, 0.15);
+           box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+           border-bottom: none;
+       }
+       
+       /* Push effect for adjacent buttons */
+       .navbar-buttons a:hover + a,
+       .navbar-buttons a:has(+ a:hover) {
+           transform: scale(1.1);
+           margin: 0 8px;
+       }
+       
+       /* Active page link */
+       .navbar-buttons a.active {
+           background-color: #ffffff;
+           color: #333333;
+       }
+       
+       /* Media Queries for Mobile Responsiveness */
+       @media (max-width: 768px) {
+           .navbar-buttons {
+               padding: 5px 10px; /* Reduce padding */
+               gap: 8px; /* Reduce gap */
+           }
+           .navbar-buttons a {
+               font-size: 14px; /* Smaller font size */
+               padding: 8px 12px; /* Adjust padding */
+           }
+           .navbar-bg {
+           padding: 22px 20px;
+       }
+       }
+       
+       @media (max-width: 480px) {
+           .navbar-buttons a {
+               font-size: 12px; /* Even smaller font size */
+               padding: 6px 10px; /* Adjust padding */
+           }
+           .navbar-bg {
+           padding: 18px 20px;
+       }
+       
+       }
+       
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: opacity 1s ease-in-out;
+        }
+        .background-container:nth-child(2) {
+            opacity: 0;
+        }
+        #backgroundWrapper {
+            width: 100%;
+            height: 100%;
+        }
+
+        .background-container {
+             position: fixed;
+             top: -5%;  
+             left: -5%; 
+             width: 110%; 
+             height: 110%;
+             background-size: cover;
+             background-position: center;
+             transition: opacity 1s ease-in-out, filter 0.3s ease-in-out;
+            }
+            
+            .background-container.blurred {
+                filter: blur(5px);
+            }
+
+
+             .text-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.021); 
+            padding: 5% 6.5% 7% 5%; 
+            border-radius: 20px;
+            font-family: sans-serif;
+            text-align: left;
+            white-space: normal;
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(10px); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); 
+            border: 1px solid rgba(255, 255, 255, 0.199);
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0);
+        }
+
+        .text-bo {
+            position: relative;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            height: auto;
+        }
+
+        .text-box .big-text,
+        .text-box .small-text,
+        .text-box .philosophy-text {
+            color: white; 
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.644); 
+            
+        }
+
+        .text-box .big-text {
+            font-weight: bold;
+            display: block;
+            /* letter-spacing: 5px;
+            word-spacing: 10px;  */
+            line-height: 0.6;  
+            margin-bottom: 10px; 
+            font-size: clamp(5.7em,6.4vw,7.0rem);
+        }
+        .text-box .small-text {
+            /* margin-top: 1000.5px;  */
+            /* letter-spacing: 1.1px; 
+            line-height: 1.5; */
+            font-size: clamp(0.7em,1.0vw,0.9rem);
+
+        }
+
+        .text-box {
+            width: 320px; 
+            height: 220px;
+        }
+        /* Image Grid Section CSS Start */
+        .image-grid-section {
+            padding: 50px 0;
+            background-color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 10px; /* Add this line to create space */
+        }
+        
+        .grid-container {
+            display: grid;
+            gap: 30px;
+            width: 70vw;
+            max-width: 1200px;
+            justify-content: center;
+
+        }
+        
+        .image-button {
+            position: relative;
+            width: 100%;
+            padding-top: 70%;
+            overflow: hidden;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.356);
+        }
+        
+        .image-button img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .image-button:hover img {
+            transform: scale(1.1);
+        }
+        
+        .image-button .overlay {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0));
+            color: white;
+            text-align: center;
+            padding: 0px;
+            font-family: sans-serif;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.644); 
+            letter-spacing: 1.1px;
+            margin-bottom: 9px;
+
+        }
+        
+        @media (min-width: 768px) {
+            .grid-container {
+                grid-template-columns: repeat(3, 1fr);
+                font-size: 1.0em;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .grid-container {
+                grid-template-columns: repeat(2, 1fr);
+                font-size: 0.9em;           
+            }
+        }
+
+        /* Image Grid Section CSS End */
+        .paragraph-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            width: 90%;
+            height: auto; /* Allow height to adjust based on content */
+            max-width: 1200px;
+            margin: 200px auto; /* Adjust top margin as needed */
+            gap: 60px;
+           flex-direction: row; /*  Horizontal orientation by default */
+        }
+        .paragraph-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.356);
+            color: white;
+            width: 30%;
+            word-wrap: break-word; 
+            font-family: sans-serif;
+            font-size: clamp(1.em,1.5vw,10.25rem); /* Default font size */
+            transition: all 0.3s ease-in-out;
+        }
+        .paragraph-box:hover {
+            background: rgba(255, 255, 255, 0.062);
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+        .paragraph-header {
+            text-align: center;
+            font-size: 2.5em; /* Adjust font size as needed */
+            margin-bottom: 10px; /* Add spacing between header and paragraph */
+        }
+        
+
+
+
+
+
+
+
+
+        /* Media query for mobile phones */
+        @media (max-width: 768px) {
+            .paragraph-container {
+               /* flex-direction: column;  Vertical orientation on mobile */
+                align-items: center;
+            }
+            .paragraph-box {
+                width: 90%;
+               /* font-size: 0.7em;  Smaller font size on mobile */
+            }
+            .paragraph-header {
+            text-align: center;
+           /* font-size: 2.0em;  Adjust font size as needed */
+            margin-bottom: 10px; /* Add spacing between header and paragraph */
+        }
+        }
+
+                /* Media query for tablets */
+        @media (max-width: 1200px) {
+            .paragraph-container {
+                flex-direction: column; /* Vertical orientation on mobile */
+                align-items: center;
+            }
+            .paragraph-box {
+                width: 70%;
+            }
+        }
+        
+        /* Media query for tablets */
+        @media (min-width: 768px) and (max-width: 1024px) {
+          /*   .paragraph-box {
+               font-size: 0.9em;  Slightly smaller font size on tablets 
+            }*/
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: auto;
+            padding: 40px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 80px;
+
+            
+        }
+        .block {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.027);
+            color: white;
+            padding:50px;
+            margin:20px;
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.356);
+            transition: all 0.3s ease-in-out;
+
+        }
+
+
+        .block:hover {
+            background: rgba(255, 255, 255, 0.062);
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .text {
+            flex: 1;
+            
+
+        }
+        .text h2 {
+            color: #ffffff;
+            font-size: 1.5em;
+        }
+        .text h1 {
+            font-size: 2em;
+            margin: 10px 0;
+            color: #ffffff;
+        }
+        .text p {
+            color: #ffffff;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+        .image-container {
+            flex: 1;
+            position: relative;
+        }
+        .image-container img {
+            width: 100%;
+            max-width: 500px;
+            max-height: 350px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .small-image {
+            width: 40%;
+            max-width: 180px;
+            max-height: 120px;
+            position: absolute;
+            bottom: -30px;
+            right: -30px;
+            border: 2px solid white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        /* Smaller second small image */
+        .image-container:nth-child(2) .small-image {
+            width: 35%;
+            max-width: 150px;
+            max-height: 100px;
+        }
+        /* Full-screen image modal */
+        .image-modal {
+            display: none; /* Ensure modal is hidden initially */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999; /* Ensure it's on top of other elements */
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
+
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #b59f66;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        @media (max-width: 768px) {
+            .block {
+                flex-direction: column;
+                text-align: center;
+            }
+            .image-container {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            .small-image {
+                width: 30%;
+                max-width: 120px;
+                bottom: -20px;
+                right: -20px;
+            }
+        }
+
+
+        .text {
+           position: relative;
+           z-index: 10; /* Higher than any overlapping elements */
+        }
+       
+               
+        /* Footer Section CSS Start */
+        .footer-section {
+            padding: 40px 10;
+            text-align: center;
+            position: relative;
+            margin-bottom: 0; /* Ensures the footer touches the bottom */
+            margin-top: 40px;
+        }
+        .footer-section {
+            background: rgba(255, 255, 255, 0.1); /* Light transparent red */
+            color: white;
+            font-family: sans-serif;
+            width: 100%; 
+            padding: 40px 0;
+            text-align: center;
+            position: relative;
+            margin-bottom: 0;
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(10px); /* For Safari support */
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); 
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.356);
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        
+        .quotes-section, .contact-section {
+            margin: 20px; /* Added some default margin */
+            flex: 1 1 300px;
+        }
+        
+        .quotes-section h3, .contact-section h3 {
+            margin-bottom: 20px;
+        }
+        
+        .social-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 8px 15px;
+            border: 1px solid white;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column; /* Stack items vertically on small screens */
+                align-items: center; /* Center items horizontally */
+            }
+        
+            .quotes-section, .contact-section {
+                margin: 2px 0; /* Adjust margins for stacked layout */
+                flex: 1 1 auto; /* Allow items to take full width */
+            }
+            .quotes-section h3, .contact-section h3 {
+                font-size: 1.2em;
+            }
+            .social-links a {
+                padding: 5px 10px;
+                font-size: 0.9em;
+            }
+            .footer-section{
+                padding: 20px 0;
+            }
+            .quotes-section p{
+                font-size: 0.9em;
+            }
+        }
+ /* Footer Section CSS End */
+
+
+ .content {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 100;
+
+}
+
+
+
+
+
+
+
+
+
+
+.image-button-item {
+            break-inside: avoid;
+            position: relative;
+            background: rgba(255, 255, 255, 0.021); 
+            padding: 5% 5% 1% 5%; 
+            border-radius: 15px;
+            text-align: left;
+            white-space: normal;
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(10px); 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); 
+            border: 1px solid rgba(255, 255, 255, 0.199);
+            color: white;
+            text-align: center;
+            font-family: sans-serif;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.644); 
+            letter-spacing: 1.1px;
+            margin-bottom: 9px;
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+    </style>
+
+</head>
+<body>
+
+
+    <div class="navbar-bg"></div>
+
+    <div class="navbar-buttons">
+        <a href="Rahat.html">Home</a>
+        <a href="Project.html">Project</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="about.html">About</a>        
+    </div>
+
+    <div id="backgroundWrapper">
+        <div class="background-container"></div>
+        <div class="background-container"></div>
+    </div>
+
+    <div class="text-box" id="textBox">
+    <div class="text-bo" id="textBo">
+        <span class="big-text">Hi I'm</span><br>
+        <span class="big-text">RAHAT</span><br>
+        <span class="small-text">TRYING TO LIVE A HONEST AND CREATIVE LIFE</span><br>
+        <!-- <span class="philosophy-text">MY PHILOSOPHY IS TO REWARD<br>GOOD DEEDS AND PUNISHED BAD</span> -->
+    </div>
+    </div>
+
+    <div class="image-grid-section">
+        <div class="grid-container" id="imageGrid">
+
+      
+       <div class="image-button-item">
+           <a href="aquarium.html" style="text-decoration: none; color: inherit;">
+               <div class="image-button">
+                   <img src="Thumbnail/aquarium-thumbnail.jpg" alt="Image 1" style="border: none; padding: 0; margin: 0; display: block;">
+               </div>
+               <div class="caption-container">
+                   <p class="caption">AQUARIUM</p>
+               </div>
+           </a>
+       </div>
+
+      <div class="image-button-item">
+        <div class="image-button">
+            <img src="backgroundImage/button-image.jpg" alt="Image 1">
+        </div>
+        <div class="caption-container">
+            <p class="caption">not now</p>
+        </div>
+      </div>
+
+
+      <div class="image-button-item">
+        <div class="image-button">
+            <img src="backgroundImage/button-image3.jpg" alt="Image 1">
+        </div>
+        <div class="caption-container">
+            <p class="caption">not now</p>
+        </div>
+      </div>
+       
+
+      <div class="image-button-item">
+        <div class="image-button">
+            <img src="backgroundImage/button-image.jpg" alt="Image 1">
+        </div>
+        <div class="caption-container">
+            <p class="caption">not now</p>
+        </div>
+      </div>
+
+      <div class="image-button-item">
+        <div class="image-button">
+            <img src="backgroundImage/button-image2.jpg" alt="Image 1">
+        </div>
+        <div class="caption-container">
+            <p class="caption">not now</p>
+        </div>
+      </div>
+       
+
+      <div class="image-button-item">
+        <div class="image-button">
+            <img src="backgroundImage/button-image.jpg" alt="Image 1">
+        </div>
+        <div class="caption-container">
+            <p class="caption">not now</p>
+        </div>
+      </div>
+
+
+
+
+
+        <!-- <div class="image-button">
+            <img src="backgroundImage/button-image2.jpg" alt="Image 2">
+            <div class="overlay">MY AQUARIUM</div>
+        </div>
+        <div class="image-button">
+            <img src="backgroundImage/button-image.jpg" alt="Image 3">
+            <div class="overlay">MY AQUARIUM</div>
+        </div>
+        <div class="image-button">
+            <img src="backgroundImage/button-image3.jpg" alt="Image 4">
+            <div class="overlay">MY CAT</div>
+        </div>
+        <div class="image-button">
+            <img src="backgroundImage/button-image.jpg" alt="Image 5">
+            <div class="overlay">MY AQUARIUM</div>
+        </div>
+        <div class="image-button">
+            <img src="backgroundImage/button-image3.jpg" alt="Image 6">
+            <div class="overlay">MY PET</div>
+        </div> -->
+
+        </div>
+    </div>
+
+
+
+
+    <div class="paragraph-container">
+        <div class="paragraph-box">
+            <div class="paragraph-header">1</div> <p id="paragraph1"> Your first statieplace this text with your desired coyour desired content.</p>
+        </div>
+        <div class="paragraph-box">
+            <div class="paragraph-header">2</div> <p id="paragraph2"> Your second static paragraph goes here. Replace this text with your desired content. </p>
+        </div>
+        <div class="paragraph-box">
+            <div class="paragraph-header">2</div> <p id="paragraph2"> Your second static paragraph goes here. Replace this text with your desired content. </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="block">
+            <div class="text">
+                <h2>03 — Positivity</h2>
+                <h1>Cheerfully killin’ it</h1>
+                <p>It’s simple, we love what we do. From the impassioned strategy meetings, to the creative eureka moments, to the late night grinds – the toughest challenges don’t stand a chance.</p>
+            </div>
+            <div class="image-container">
+                <img src="image3.jpg" alt="Team Positivity" onclick="openImage(this.src)">
+                <img src="https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg" alt="Casual Fun" class="small-image" onclick="openImage(this.src)">
+            </div>
+        </div>
+        <div class="block">
+            <div class="text">
+                <h2>04 — Innovation</h2>
+                <h1>Pushing the boundaries</h1>
+                <p>Creativity fuels our work. We thrive on groundbreaking ideas, transforming challenges into opportunities with strategic thinking and innovation.</p>
+            </div>
+            <div class="image-container">
+                <img src="https://cdn.pixabay.com/photo/2025/01/19/19/17/bird-9345016_1280.jpg" alt="Team Positivity" onclick="openImage(this.src)">
+                <img src="https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg" alt="Casual Fun" class="small-image" onclick="openImage(this.src)">
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer-section">
+        <div class="footer-content">
+            <div class="quotes-section">
+                <h6>Your first static paragraph goes here. Replace this text with your desired content.</h6>
+
+
+            </div>
+            <div class="contact-section">
+                <h3>Contact & Social</h3>
+                <div class="social-links">
+                    <a href="https://www.facebook.com/imranhossen.rahat.503" target="_blank">Facebook</a>
+                    <a href="#" target="_blank">Twitter</a>
+                    <a href="https://www.instagram.com/rahatimranhossen/" target="_blank">Instagram</a>
+                    <h5>imranrahat616@gmail.com</h5>
+                </div>
+        </div>
+    </footer>
+
+    <div class="image-modal" id="imageModal">
+        <img src="" alt="Full-screen Image" id="fullImage">
+        <button class="back-button" onclick="closeImage()">Back</button>
+    </div>
+
+    <script>
+         const textBox = document.getElementById('textBox');
+        const backgroundWrapper = document.getElementById('backgroundWrapper'); 
+
+        const backgroundContainers = document.querySelectorAll('.background-container');
+        const currentBackground = backgroundContainers[0];
+        const nextBackground = backgroundContainers[1];
+
+        let focalX = 73;
+        let focalY = 50;
+
+        function updateBackgroundPosition() {
+            currentBackground.style.backgroundPosition = `${focalX}% ${focalY}%`;
+            nextBackground.style.backgroundPosition = `${focalX}% ${focalY}%`;
+        }
+
+        updateBackgroundPosition();
+
+        const images = [
+            'backgroundImage/image1.jpg',
+            'backgroundImage/image2.jpg',
+            'backgroundImage/image3.jpg',
+        ];
+
+        // Retrieve the last saved image index from localStorage (or default to 0)
+        let imageIndex = localStorage.getItem('imageIndex') ? parseInt(localStorage.getItem('imageIndex')) : 0;
+
+        function setSequentialBackground() {
+            nextBackground.style.backgroundImage = `url('${images[imageIndex]}')`;
+            nextBackground.style.opacity = 1;
+
+            setTimeout(() => {
+                currentBackground.style.backgroundImage = nextBackground.style.backgroundImage;
+                currentBackground.style.opacity = 1;
+                nextBackground.style.opacity = 0;
+            }, 1000);
+
+            // Save the current image index to localStorage before moving to the next one
+            localStorage.setItem('imageIndex', imageIndex);
+
+            imageIndex = (imageIndex + 1) % images.length;
+        }
+
+        setSequentialBackground();
+        setInterval(setSequentialBackground, 30000);
+
+
+function updateLayout() { }
+
+        updateLayout();
+        window.addEventListener('resize', updateLayout);
+
+
+    // Add this code to your existing JavaScript, after the existing variables
+
+    document.addEventListener("DOMContentLoaded", function () {
+    const background = document.querySelector(".background-container");
+
+    window.addEventListener("scroll", function () {
+        let scrollPosition = window.scrollY;
+
+        if (scrollPosition > 30) {
+            background.classList.add("blurred");
+        } else {
+            background.classList.remove("blurred");
+        }
+    });
+});
+
+const modal = document.getElementById("imageModal");
+        const fullImage = document.getElementById("fullImage");
+
+        // Ensure the modal is hidden on initial load
+        modal.style.display = "none";
+
+        function openImage(src) {
+            fullImage.src = src;
+            modal.style.display = "flex";
+        }
+
+        function closeImage() {
+            modal.style.display = "none";
+        }
+
+    </script>
+
+</body>
+</html>  
+
