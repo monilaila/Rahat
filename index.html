@@ -15,8 +15,9 @@
             
         }
 
-  /* Navigation bar background styles */
-  .navbar-bg {
+
+        /* Navigation bar background styles */
+        .navbar-bg {
            position: fixed;
            top: 0;
            left: 0;
@@ -137,6 +138,10 @@
             
             .background-container.blurred {
                 filter: blur(5px);
+            }
+            
+            html {
+              scroll-behavior: smooth;
             }
 
 
@@ -275,18 +280,20 @@
         }
        }
 
-        /* Image Grid Section CSS End */
-        .paragraph-container {
+         .paragraph-container {
             display: flex;
             justify-content: center;
-            padding: 20px;
-            width: 90%;
-            height: auto; /* Allow height to adjust based on content */
-            max-width: 1200px;
-            margin: 200px auto; /* Adjust top margin as needed */
+            padding: 0px;
+            width: 100%;
+            height: auto;
+            max-width: 1500px;
+            margin: 150px auto;
             gap: 60px;
-           flex-direction: row; /*  Horizontal orientation by default */
+            flex-direction: row;
+            flex-wrap: wrap;
         }
+        
+
         .paragraph-box {
             background: rgba(255, 255, 255, 0.1);
             padding: 30px;
@@ -314,13 +321,9 @@
             margin-bottom: 10px; /* Add spacing between header and paragraph */
         }
         
-
-
-
-
-
-
-
+        #paragraph1,#paragraph2,#paragraph3 {
+            font-size: 20px; /* Example font size */
+        }
 
         /* Media query for mobile phones */
         @media (max-width: 768px) {
@@ -535,6 +538,7 @@
         .quotes-section, .contact-section {
             margin: 20px; /* Added some default margin */
             flex: 1 1 300px;
+            font-size: 18px;
         }
         
         .quotes-section h3, .contact-section h3 {
@@ -588,18 +592,9 @@
     top: 0;
     left: 0;
     right: 0;
-
     z-index: 100;
 
 }
-
-
-
-
-
-
-
-
 
 
 .image-button-item {
@@ -620,19 +615,9 @@
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.644); 
             letter-spacing: 1.1px;
             margin-bottom: 9px;
-
-
         }
 
-
-
-
-
-
-
-
-
-
+        
     </style>
 
 </head>
@@ -642,7 +627,8 @@
     <div class="navbar-bg"></div>
 
     <div class="navbar-buttons">
-        <a href="Rahat.html">Home</a>
+    
+        <a href="index.html">Home</a>
         <a href="Project.html">Project</a>
         <a href="gallery.html">Gallery</a>
         <a href="about.html">About</a>        
@@ -726,30 +712,6 @@
       </div>
 
 
-
-
-
-        <!-- <div class="image-button">
-            <img src="backgroundImage/button-image2.jpg" alt="Image 2">
-            <div class="overlay">MY AQUARIUM</div>
-        </div>
-        <div class="image-button">
-            <img src="backgroundImage/button-image.jpg" alt="Image 3">
-            <div class="overlay">MY AQUARIUM</div>
-        </div>
-        <div class="image-button">
-            <img src="backgroundImage/button-image3.jpg" alt="Image 4">
-            <div class="overlay">MY CAT</div>
-        </div>
-        <div class="image-button">
-            <img src="backgroundImage/button-image.jpg" alt="Image 5">
-            <div class="overlay">MY AQUARIUM</div>
-        </div>
-        <div class="image-button">
-            <img src="backgroundImage/button-image3.jpg" alt="Image 6">
-            <div class="overlay">MY PET</div>
-        </div> -->
-
         </div>
     </div>
 
@@ -758,13 +720,13 @@
 
     <div class="paragraph-container">
         <div class="paragraph-box">
-            <div class="paragraph-header">1</div> <p id="paragraph1"> Your first statieplace this text with your desired coyour desired content.</p>
+            <div class="paragraph-header">1</div> <p id="paragraph1"> I might not be the sharpest tool in the shed, or the best-looking, but I'm pretty good with my hands and love learning new stuff.  The thing is, I'm also kinda lazy.  Like, if there's a tiny job, I'll spend a month building some crazy thingamajig just so I never have to do that simple task again.</p>
         </div>
         <div class="paragraph-box">
-            <div class="paragraph-header">2</div> <p id="paragraph2"> Your second static paragraph goes here. Replace this text with your desired content. </p>
+            <div class="paragraph-header">2</div> <p id="paragraph2"> My deep moral compass is guided by the belief that a just society, even a heavenly one, can be achieved through the simple act of punishing bad deeds and rewarding good ones. While it may seem straightforward, this principle holds the key to a harmonious world. Good deeds, when practiced universally, foster societal well-being, whereas bad deeds, whether widespread or isolated, inevitably lead to chaos.</p>
         </div>
         <div class="paragraph-box">
-            <div class="paragraph-header">2</div> <p id="paragraph2"> Your second static paragraph goes here. Replace this text with your desired content. </p>
+            <div class="paragraph-header">2</div> <p id="paragraph2"> We can discern good deeds from bad by considering their universal impact on society. Actions are generally good if, when practiced by everyone, they lead to widespread well-being, cooperation, and overall societal flourishing. Conversely, actions are generally bad if, even when performed by a few or, especially, by everyone, they result in harm, chaos, and the breakdown of societal order. This test of universal consequence helps us identify behaviors that inherently contribute to or detract from a thriving community. </p>
         </div>
     </div>
 
@@ -772,7 +734,7 @@
         <div class="block">
             <div class="text">
                 <h2>03 — Positivity</h2>
-                <h1>Cheerfully killin’ it</h1>
+                <h3>Cheerfully killin’ it</h3>
                 <p>It’s simple, we love what we do. From the impassioned strategy meetings, to the creative eureka moments, to the late night grinds – the toughest challenges don’t stand a chance.</p>
             </div>
             <div class="image-container">
@@ -900,8 +862,23 @@ const modal = document.getElementById("imageModal");
             modal.style.display = "none";
         }
 
+
+
+        document.addEventListener("wheel", function(event) {
+    event.preventDefault(); // Prevent default scrolling
+    window.scrollBy({
+        top: event.deltaY * 1.2,  // Adjust this multiplier (0.3 = slower, 1 = normal)
+        behavior: "smooth"
+    });
+   }, { passive: false });
+
+
+
+
+
+
+
     </script>
 
 </body>
 </html>  
-
