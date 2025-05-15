@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Time Passed</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      color: white;
+      background: url('backgroundImage/Frame_13.png') no-repeat center center fixed;
+            /* background: url('Frame_13.png') no-repeat center center fixed; */
+      background-size: cover;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* Gradient overlay */
+    body::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 50%;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+      z-index: 0;
+    }
+
+    .time-container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      margin-bottom: 0px;
+    }
+
+    .main-time {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .total-time {
+      font-size: 1rem;
+      opacity: 0.85;
+      margin: 25px;
+    }
+
+    @media (min-width: 768px) {
+      .main-time {
+        font-size: 2.5rem;
+      }
+
+      .total-time {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="time-container">
+    <div class="main-time" id="timePassed">Calculating...</div>
+
+    <hr style="width:70%;opacity:0.30">
+
+    <div class="total-time" id="totalTime">Calculating total time...</div>
+  </div>
+
+  <script>
+    const startTime = new Date("May 14, 2025 17:56:00");
+
+    function updateTime() {
+      const now = new Date();
+      let diffMs = now - startTime;
+
+      const seconds = Math.floor(diffMs / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      const weeks = Math.floor(days / 7);
+      const months = Math.floor(days / 30.44);
+      const years = Math.floor(days / 365.25);
+
+      const displayHours = hours % 24;
+      const displayMinutes = minutes % 60;
+      const displaySeconds = seconds % 60;
+      const remainingMonths = months % 12;
+      const remainingWeeks = weeks % 4;
+      const remainingDays = days % 7;
+
+      // Main time display
+      document.getElementById("timePassed").innerText =
+        `${years} YEAR : ${remainingMonths} MONTHS ${remainingWeeks} WEEK ${remainingDays} DAYS :\n` +
+        `${String(displayHours).padStart(2, '0')} : ${String(displayMinutes).padStart(2, '0')} : ${String(displaySeconds).padStart(2, '0')}`;
+
+      // Total hours/minutes/seconds
+      document.getElementById("totalTime").innerText =
+        ` ${hours} Hours  :  ${minutes} Minutes :  ${seconds} Seconds`;
+    }
+
+    setInterval(updateTime, 1000);
+    updateTime(); // Initial
+  </script>
+</body>
+</html>
