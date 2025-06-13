@@ -635,8 +635,8 @@
     </div>
 
     <div id="backgroundWrapper">
-        <div class="background-container"></div>
-        <div class="background-container"></div>
+        <div class="background-container" id="currentBackground"></div>
+        <div class="background-container" id="nextBackground"></div>
     </div>
 
     <div class="text-box" id="textBox">
@@ -778,107 +778,158 @@
         <button class="back-button" onclick="closeImage()">Back</button>
     </div>
 
-    <script>
-         const textBox = document.getElementById('textBox');
-        const backgroundWrapper = document.getElementById('backgroundWrapper'); 
+<script>
+    const textBox = document.getElementById('textBox'); // Assuming 'textBox' exists in your HTML
+    const backgroundWrapper = document.getElementById('backgroundWrapper');
 
-        const backgroundContainers = document.querySelectorAll('.background-container');
-        const currentBackground = backgroundContainers[0];
-        const nextBackground = backgroundContainers[1];
+    // Get background containers by their specific IDs for clarity and direct access
+    const currentBackgroundDiv = document.getElementById('currentBackground');
+    const nextBackgroundDiv = document.getElementById('nextBackground');
 
-        let focalX = 73;
-        let focalY = 50;
+    let focalX = 73;
+    let focalY = 50;
 
-        function updateBackgroundPosition() {
-            currentBackground.style.backgroundPosition = `${focalX}% ${focalY}%`;
-            nextBackground.style.backgroundPosition = `${focalX}% ${focalY}%`;
-        }
+    function updateBackgroundPosition() {
+        currentBackgroundDiv.style.backgroundPosition = `${focalX}% ${focalY}%`;
+        nextBackgroundDiv.style.backgroundPosition = `${focalX}% ${focalY}%`;
+    }
 
-        updateBackgroundPosition();
+    updateBackgroundPosition();
 
-        const images = [
-            'backgroundImage/image1.jpg',
-            'backgroundImage/image2.jpg',
-            'backgroundImage/image3.jpg',
-        ];
+    const imageUrls = [ // Renamed for clarity that these are just URLs
+        'backgroundImage/image1.jpg',
+        'backgroundImage/image2.jpg',
+        'backgroundImage/image3.jpg',
+    ];
 
-        // Retrieve the last saved image index from localStorage (or default to 0)
-        let imageIndex = localStorage.getItem('imageIndex') ? parseInt(localStorage.getItem('imageIndex')) : 0;
+    // Array to hold promises for preloading, or just to indicate completion
+    let preloadedImagePromises = [];
+    // Array to store the 'url(...)' strings for direct use
+    let cachedImageUrls = [];
 
-        function setSequentialBackground() {
-            nextBackground.style.backgroundImage = `url('${images[imageIndex]}')`;
-            nextBackground.style.opacity = 1;
+    // Retrieve the last saved image index from localStorage (or default to 0)
+    let imageIndex = localStorage.getItem('imageIndex') ? parseInt(localStorage.getItem('imageIndex')) : 0;
 
-            setTimeout(() => {
-                currentBackground.style.backgroundImage = nextBackground.style.backgroundImage;
-                currentBackground.style.opacity = 1;
-                nextBackground.style.opacity = 0;
-            }, 1000);
+    // --- NEW/MODIFIED: Preload ALL Images Function ---
+    function preloadAllImages() {
+        imageUrls.forEach(url => {
+            const promise = new Promise((resolve, reject) => {
+                const img = new Image();
+                img.src = url;
+                img.onload = () => {
+                    cachedImageUrls.push(`url('${url}')`); // Store the formatted URL string
+                    resolve(url);
+                };
+                img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+            });
+            preloadedImagePromises.push(promise);
+        });
+        return Promise.all(preloadedImagePromises); // Wait for all images to load
+    }
 
-            // Save the current image index to localStorage before moving to the next one
-            localStorage.setItem('imageIndex', imageIndex);
+    // --- MODIFIED: setSequentialBackground (now only determines next image, not preloads) ---
+    function setSequentialBackground() {
+        // This function's role is simplified because all images are preloaded upfront
+        const nextImageIndex = (imageIndex + 1) % imageUrls.length;
+        const nextImageUrlString = cachedImageUrls[nextImageIndex]; // Get from the preloaded array
 
-            imageIndex = (imageIndex + 1) % images.length;
-        }
+        // Set the background on the 'nextBackgroundDiv'
+        // It remains hidden (opacity: 0) until its turn in startTransitionLoop
+        nextBackgroundDiv.style.backgroundImage = nextImageUrlString;
 
-        setSequentialBackground();
-        setInterval(setSequentialBackground, 30000);
+        // Save the current image index to localStorage for the next page load
+        localStorage.setItem('imageIndex', imageIndex);
+
+        // Update imageIndex for the *next* cycle's current image
+        imageIndex = nextImageIndex;
+    }
+
+    // --- MODIFIED: Initialization function to preload all images upfront ---
+    async function initializeBackgrounds() {
+        console.log("Starting image preloading...");
+        await preloadAllImages(); // Wait for all images to be preloaded
+        console.log("All images preloaded.");
+
+        // Set the initial background based on the retrieved imageIndex
+        // Use the preloaded URL string
+        currentBackgroundDiv.style.backgroundImage = cachedImageUrls[imageIndex];
+
+        // Set the next image immediately for the first transition, also from preloaded
+        const initialNextImageIndex = (imageIndex + 1) % imageUrls.length;
+        nextBackgroundDiv.style.backgroundImage = cachedImageUrls[initialNextImageIndex];
 
 
-function updateLayout() { }
+        // Start the main transition loop after a brief delay
+        setTimeout(startTransitionLoop, 100);
+    }
 
-        updateLayout();
-        window.addEventListener('resize', updateLayout);
+    // --- MODIFIED: Function to manage the actual fading transition ---
+    function startTransitionLoop() {
+        setInterval(() => {
+            // Swap the backgrounds: the preloaded image from nextBackgroundDiv becomes current
+            currentBackgroundDiv.style.backgroundImage = nextBackgroundDiv.style.backgroundImage;
+
+            // Trigger the fade-out of the old background and fade-in of the new current one
+            currentBackgroundDiv.style.opacity = 1; // Ensure current is visible
+            nextBackgroundDiv.style.opacity = 0; // Ensure next is hidden for the next image
+
+            // Now, call setSequentialBackground to set the *next* preloaded image onto nextBackgroundDiv
+            setSequentialBackground();
+        }, 30000); // Your specified interval for changing images
+    }
+
+    // --- Call the initialization function to start the background process ---
+    initializeBackgrounds();
 
 
-    // Add this code to your existing JavaScript, after the existing variables
+    function updateLayout() { } // Your existing function
+
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+
 
     document.addEventListener("DOMContentLoaded", function () {
-    const background = document.querySelector(".background-container");
+        const allBackgrounds = document.querySelectorAll(".background-container");
 
-    window.addEventListener("scroll", function () {
-        let scrollPosition = window.scrollY;
+        window.addEventListener("scroll", function () {
+            let scrollPosition = window.scrollY;
 
-        if (scrollPosition > 30) {
-            background.classList.add("blurred");
-        } else {
-            background.classList.remove("blurred");
-        }
+            if (scrollPosition > 30) {
+                allBackgrounds.forEach(bg => bg.classList.add("blurred"));
+            } else {
+                allBackgrounds.forEach(bg => bg.classList.remove("blurred"));
+            }
+        });
     });
-});
 
-const modal = document.getElementById("imageModal");
-        const fullImage = document.getElementById("fullImage");
+    const modal = document.getElementById("imageModal");
+    const fullImage = document.getElementById("fullImage");
 
-        // Ensure the modal is hidden on initial load
+    if (modal) {
         modal.style.display = "none";
+    }
 
-        function openImage(src) {
+    function openImage(src) {
+        if (fullImage && modal) {
             fullImage.src = src;
             modal.style.display = "flex";
         }
+    }
 
-        function closeImage() {
+    function closeImage() {
+        if (modal) {
             modal.style.display = "none";
         }
+    }
 
-
-
-        document.addEventListener("wheel", function(event) {
-    event.preventDefault(); // Prevent default scrolling
-    window.scrollBy({
-        top: event.deltaY * 1.2,  // Adjust this multiplier (0.3 = slower, 1 = normal)
-        behavior: "smooth"
-    });
-   }, { passive: false });
-
-
-
-
-
-
-
-    </script>
+    document.addEventListener("wheel", function(event) {
+        event.preventDefault(); // Prevent default scrolling
+        window.scrollBy({
+            top: event.deltaY * 1.2,
+            behavior: "smooth"
+        });
+    }, { passive: false });
+</script>
 
 </body>
 </html>  
