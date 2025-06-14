@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Rainfall</title>
+
+    <style>
+
+        body { background: black;
+               margin: 0;
+               overflow: hidden; }
+
+        :root {
+          --matrix-bg-color: rgba(0, 0, 0, 0.05);
+          --matrix-text-color: rgb(255, 64, 64);
+          --matrix-font-size: 16px;
+          --matrix-font-family: Arial;
+          --matrix-random-threshold: 2.98;
+          --matrix-speed: 55; /* <--- Add this */
+        }
+
+
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="matrixCanvas"></canvas>
+</body>
+
+ <script>
+    const canvas = document.getElementById("matrixCanvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext("2d");
+    
+    const chars = "゠アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレワヰヱヲンヺ・ーヽヿ0123456789";
+    const drops = [];
+    const columnWidth = 16;
+    
+    for (let i = 0; i < canvas.width / columnWidth; i++) {
+        drops[i] = Math.floor(Math.random() * (canvas.height / columnWidth));
+    }
+    
+    function drawMatrix() {
+        const rootStyles = getComputedStyle(document.documentElement);
+        const bgColor = rootStyles.getPropertyValue('--matrix-bg-color').trim();
+        const textColor = rootStyles.getPropertyValue('--matrix-text-color').trim();
+        const fontSize = rootStyles.getPropertyValue('--matrix-font-size').trim();
+        const fontFamily = rootStyles.getPropertyValue('--matrix-font-family').trim();
+        const randomThreshold = parseFloat(rootStyles.getPropertyValue('--matrix-random-threshold'));
+    
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = textColor;
+        ctx.font = `${fontSize} ${fontFamily}`;
+    
+        for (let i = 0; i < drops.length; i++) {
+            const text = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(text, i * columnWidth, drops[i] * columnWidth);
+    
+            if (drops[i] * columnWidth > canvas.height || Math.random() > randomThreshold) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+    
+    const rootStyles = getComputedStyle(document.documentElement);
+    const speed = parseInt(rootStyles.getPropertyValue('--matrix-speed'), 10);
+    setInterval(drawMatrix, speed);
+    
+    function getRandomColor() {
+    const r = Math.floor(Math.random() * 200 + 55);
+    const g = Math.floor(Math.random() * 200 + 55);
+    const b = Math.floor(Math.random() * 200 + 55);
+    return `rgb(${r}, ${g}, ${b})`;
+    }
+    function changeMatrixColor() {
+    const newColor = getRandomColor();
+    document.documentElement.style.setProperty('--matrix-text-color', newColor);
+    }
+    setInterval(changeMatrixColor, 10000); // change every 10 seconds
+
+ </script>
+</html>
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Rainfall</title>
+
+    <style>
+
+        body { background: black;
+               margin: 0;
+               overflow: hidden; }
+
+        :root {
+          --matrix-bg-color: rgba(0, 0, 0, 0.05);
+          --matrix-text-color: rgb(255, 64, 64);
+          --matrix-font-size: 16px;
+          --matrix-font-family: Arial;
+          --matrix-random-threshold: 0.98;
+          --matrix-speed: 55; /* <--- Add this */
+        }
+
+
+        canvas { display: block; }
+
+    </style>
+
+</head>
+
+<body>
+    <canvas id="matrixCanvas"></canvas>
+</body>
+
+ <script>
+    const canvas = document.getElementById("matrixCanvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext("2d");
+    
+    const chars = "゠アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレワヰヱヲンヺ・ーヽヿ0123456789";
+    const drops = [];
+    const columnWidth = 16;
+    
+    for (let i = 0; i < canvas.width / columnWidth; i++) {
+        drops[i] = Math.floor(Math.random() * (canvas.height / columnWidth));
+    }
+    
+    function drawMatrix() {
+        const rootStyles = getComputedStyle(document.documentElement);
+        const bgColor = rootStyles.getPropertyValue('--matrix-bg-color').trim();
+        const textColor = rootStyles.getPropertyValue('--matrix-text-color').trim();
+        const fontSize = rootStyles.getPropertyValue('--matrix-font-size').trim();
+        const fontFamily = rootStyles.getPropertyValue('--matrix-font-family').trim();
+        const randomThreshold = parseFloat(rootStyles.getPropertyValue('--matrix-random-threshold'));
+    
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = textColor;
+        ctx.font = `${fontSize} ${fontFamily}`;
+    
+        for (let i = 0; i < drops.length; i++) {
+            const text = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(text, i * columnWidth, drops[i] * columnWidth);
+    
+            if (drops[i] * columnWidth > canvas.height || Math.random() > randomThreshold) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+    
+    const rootStyles = getComputedStyle(document.documentElement);
+    const speed = parseInt(rootStyles.getPropertyValue('--matrix-speed'), 10);
+    setInterval(drawMatrix, speed);
+    
+ </script>
+</html>
+ -->
