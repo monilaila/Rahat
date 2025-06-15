@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zombie Shooter Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+
+    <div id="healthBarContainer">
+        <div id="healthBar"></div>
+    </div>
+    <div id="progressContainer">
+        <div id="progress"></div>
+
+        <div id="score">Score: 0</div>
+
+    </div>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            border: 1px solid black;
+            touch-action: none;
+        }
+
+        #score {
+              color: rgb(255, 9, 9); /* Bright red */
+              font-weight: bold; /* Makes text bold */
+              position: absolute;
+              top: 65px; /* Adjusted for better placement */
+              left: 5px;
+
+              font-size: 24px; /* Slightly larger */
+              text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Optional: Adds a shadow */
+              background-color: rgba(0, 0, 0, 0.5); /* Optional: Adds a semi-transparent background */
+              padding: 5px 10px; /* Padding for better visibility */
+              border-radius: 5px; /* Rounded corners */
+         }
+
+
+        #healthBarContainer,
+        #progressContainer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        #healthBar,
+        #progress {
+            width: 100px;
+            height: 10px;
+            background-color: #ccc;
+        }
+
+        #healthBar {
+            background-color: red;
+        }
+
+        #progress {
+            background-color: green;
+        }
+    </style>
+
+    <script>
+        let player;
+        let bullets = [];
+        let enemies = [];
+        let spawnRate = 1000;
+        let lastSpawn = 0;
+        let speedMultiplier = 1;
+        let hitCount = 0;
+        let gameOver = false;
+        let round = 1;
+        let totalEnemies = 50;
+        let enemiesDefeated = 0;
+        let shooting = false;
+        let lastShotTime = 0;
+        let bulletInterval = 100;
+        const bulletMaxDistance = 300;
+        let score = 0;
+        let playerHealth = 100;
+        const maxPlayerHealth = 100;
+
+        const colors = ['red', 'yellow', 'blue', 'black', 'pink'];
+        const health = { 'red': 4, 'yellow': 6, 'blue': 9, 'black': 12, 'pink': 2 };
+        const scores = { 'red': 1, 'yellow': 2, 'blue': 4, 'black': 5, 'pink': 3 };
+        let totalEnemiesKilled = 0;
+        let images = {};
+
+        let explosions = []; // Store active explosions
+
+function preload() {
+    images.player = loadImage('game_image/game1/player.png');
+    images.red = loadImage('game_image/game1/red_enemy.png');
+    images.yellow = loadImage('game_image/game1/yellow_enemy.png');
+    images.blue = loadImage('game_image/game1/blue_enemy.png');
+    images.black = loadImage('game_image/game1/black_enemy.png');
+    images.pink = loadImage('game_image/game1/pink_enemy.png');
+    images.explosion = loadImage('game_image/game1/explosion.png'); // Load explosion image
+    bulletImg = loadImage('game_image/game1/bullet.png');
+}
+
+
+function setup() {
+    let canvasWidth = windowWidth * 0.7; // 30% smaller
+    let canvasHeight = windowHeight * 0.7; // 30% smaller
+    createCanvas(canvasWidth, canvasHeight);
+    frameRate(60);
+    player = new Player();
+    adjustCanvasSize();
+}
+
+function adjustCanvasSize() {
+    let canvasElement = select('canvas');
+    canvasElement.style('width', '100vw'); // Ensure it covers the viewport width
+    canvasElement.style('height', '100vh'); // Ensure it covers the viewport height
+    canvasElement.style('position', 'absolute'); 
+    canvasElement.style('top', '50%'); 
+    canvasElement.style('left', '50%'); 
+    canvasElement.style('transform', 'translate(-50%, -50%)'); // Center the canvas
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth * 0.3, windowHeight * 0.3); // Resize dynamically
+    adjustCanvasSize();
+}
+
+
+function draw() {
+    if (gameOver) {
+        background(255, 0, 0);
+        fill(255);
+        textSize(32);
+        textAlign(CENTER, CENTER);
+        text("Game Over", width / 2, height / 2);
+        return;
+    }
+
+    background(0);
+    player.show();
+    player.move();
+
+    fill(255, 0, 0);
+    rect(10, 10, (playerHealth / maxPlayerHealth) * 100, 10);
+
+    fill(0, 255, 0);
+    rect(10, 40, (enemiesDefeated / totalEnemies) * 100, 10);
+
+    if (shooting && millis() - lastShotTime >= bulletInterval) {
+        bullets.push(new Bullet(player.x, player.y));
+        lastShotTime = millis();
+    }
+
+    // Handle bullets
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        bullets[i].move();
+        bullets[i].show();
+        if (bullets[i].distanceTraveled > bulletMaxDistance || !bullets[i].isWithinBounds()) {
+            bullets.splice(i, 1);
+        }
+    }
+
+    // Handle enemies
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        enemies[i].move();
+        enemies[i].show();
+
+        if (dist(enemies[i].x, enemies[i].y, player.x, player.y) < 20) {
+            if (enemies[i].color !== 'pink') {
+                playerHit();
+            }
+            enemies.splice(i, 1);
+            continue;
+        }
+
+        for (let j = bullets.length - 1; j >= 0; j--) {
+            if (dist(enemies[i].x, enemies[i].y, bullets[j].x, bullets[j].y) < 15) {
+                enemies[i].hit();
+                bullets.splice(j, 1);
+                
+                if (enemies[i].health <= 0) {
+                    explosions.push({ x: enemies[i].x, y: enemies[i].y, startTime: millis() }); // Explosion effect
+                    score += scores[enemies[i].color];
+                    enemies.splice(i, 1);
+                    enemiesDefeated++;
+
+                    if (enemies[i].color === 'pink') {
+                        playerHealth = min(playerHealth + 10, maxPlayerHealth);
+                    }
+                    if (enemiesDefeated >= totalEnemies) {
+                        nextRound();
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    // Handle explosion effects
+    for (let i = explosions.length - 1; i >= 0; i--) {
+        image(images.explosion, explosions[i].x - 25, explosions[i].y - 25, 50, 50);
+
+        if (millis() - explosions[i].startTime > 200) {
+            explosions.splice(i, 1); // Remove explosion after 200ms
+        }
+    }
+
+    if (millis() - lastSpawn > spawnRate && enemies.length < totalEnemies) {
+        spawnEnemy();
+        lastSpawn = millis();
+    }
+
+    updateProgress();
+    updateHealthBar();
+}
+
+        function keyPressed() {
+            if (key === ' ') {
+                shooting = true;
+            }
+        }
+
+        function keyReleased() {
+            if (key === ' ') {
+                shooting = false;
+            }
+        }
+
+        function spawnEnemy() {
+            const color = random(colors);
+            enemies.push(new Enemy(random(width), 0, color));
+        }
+
+        function playerHit() {
+            playerHealth -= 10;
+            if (playerHealth <= 0) {
+                gameOver = true;
+            }
+        }
+
+        function nextRound() {
+            round++;
+            enemiesDefeated = 0;
+            totalEnemies += 10;
+            speedMultiplier += 0.2;
+            spawnRate = max(200, spawnRate * 0.9);
+            bulletInterval = max(50, bulletInterval - 10);
+
+            for (let enemy of enemies) {
+                enemy.speed += 0.5;
+                enemy.health += 1;
+            }
+        }
+
+        function updateProgress() {
+            const progressWidth = (enemiesDefeated / totalEnemies) * 100;
+            document.getElementById('progress').style.width = progressWidth + '%';
+            document.getElementById('score').innerText = `Score: ${score}`;
+        }
+
+        function updateHealthBar() {
+            const healthBarWidth = (playerHealth / maxPlayerHealth) * 100;
+            document.getElementById('healthBar').style.width = healthBarWidth + '%';
+        }
+
+        let isMoving = false;
+
+        function mousePressed() {
+            shooting = true;
+            isMoving = true;
+        }
+
+        function mouseReleased() {
+            shooting = false;
+            isMoving = false;
+        }
+
+        class Player {
+    constructor() {
+        this.x = width / 20;
+        this.y = height - 87; // Adjusted height to match the increased player size
+    }
+
+    show() {
+        image(images.player, this.x, this.y, 72, 87);  // Updated width and height
+    }
+
+        move() {
+        if (isMoving) {
+            const mousePos = createVector(mouseX, mouseY);
+            
+            // Offset by half the player's width and height to center movement
+            const playerCenterX = this.x + 36;  // Half of 72 (player width)
+            const playerCenterY = this.y + 63.5; // Half of 87 (player height)
+     
+            const direction = p5.Vector.sub(mousePos, createVector(playerCenterX, playerCenterY));
+            if (direction.mag() > 2) {
+                direction.normalize();
+                direction.mult(5); // Adjust speed
+                this.x += direction.x;
+                this.y += direction.y;
+            }
+        }
+     }
+
+   }
+
+
+        class Bullet {
+            constructor(x, y) {
+                this.x = x + 19;
+                this.y = y;
+                this.distanceTraveled = 0;
+            }
+
+              move() {
+                this.y -= 3.5 * 1.3;  // Increased speed by 10%
+                this.distanceTraveled += 6 * 0.9;  // Increased distance by 10%
+            }
+
+
+            show() {
+                image(bulletImg, this.x, this.y, 10 * 1.3, 12 * 1.3);  // Increased size by 30%
+            }
+
+            isWithinBounds() {
+                return this.x > 0 && this.x < width && this.y > 0 && this.y < height;
+            }
+        }
+
+        class Enemy {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.health = health[color];
+                this.speed = 1.1 * 0.6;  // Increased speed by 30%
+            }
+
+            move() {
+                let angle = atan2(player.y - this.y, player.x - this.x);
+                this.x += cos(angle) * this.speed * speedMultiplier;
+                this.y += sin(angle) * this.speed * speedMultiplier;
+            }
+
+            show() {
+                image(images[this.color], this.x - 15 * 1.3, this.y - 15 * 1.3, 30 * 1.3, 30 * 1.3);  // Increased size by 30%
+            }
+
+            hit() {
+                this.health -= 1;
+            }
+        }
+    </script>
+</body>
+</html>
