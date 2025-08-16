@@ -62,7 +62,7 @@
 
       const data = { image: selectedImage, model: model, number: number };
 
-      fetch("https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLgKSlCKyX6GQKWR_84Yo5UdwDUY82ErYpHWap5Xo8iskEgEge1KAqnndqMhEnIyaEQDu_xJ9hwMAdc-sVOqTkR4ktoVpU5aB3mX3pX5xEnH4Egj2gog_tFnw5oKoUFCh2B8I2_pLubhmDhcpLhXmOlwRO03lvsdnzUWa47gLmYftUle1wxpi8Q2E_RRmLm2Y_atBCo3-mlOcMPi_0SUG7JEbc5Q8hzGHLpgfaQ7zNOYNQfMM55PZknbL7K8ATwYIWJy0OIDmYMoXFlPChipQavoYcrEE-g54Bsg2Y-M&lib=MPozIie7Oha7jWMZfnmZXxsI06-eazese", { // ← Replace this
+      fetch("https://script.google.com/macros/s/AKfycbx4W0u_AHXNSAkGi5VEUJwVyipKToDyBuMCsRY68aqAGSW29yKNTybA82ESOab1jK0YGQ/exec", { // ← Replace this
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -77,4 +77,5 @@
   </script>
 </body>
 </html>
+
 
