@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gallery Submission</title>
+  <style>
+    #gallery img {
+      width: 150px;
+      margin: 10px;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    #gallery img.selected {
+      border: 2px solid blue;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pick an Image & Submit</h1>
+
+  <!-- Gallery -->
+  <div id="gallery">
+    <img src="https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg" alt="Cat" onclick="selectImage(this,'cat')">
+    <img src="https://cdn.pixabay.com/photo/2025/01/19/19/17/bird-9345016_1280.jpg" alt="Dog" onclick="selectImage(this,'dog')">
+    <img src="https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg" alt="Bird" onclick="selectImage(this,'bird')">
+  </div>
+
+  <!-- Model + Number -->
+  <label>Model:
+    <select id="model">
+      <option value="Model A">Model A</option>
+      <option value="Model B">Model B</option>
+    </select>
+  </label>
+  <br>
+  <label>Number:
+    <input type="number" id="number" min="1" value="1">
+  </label>
+  <br><br>
+
+  <!-- Submit -->
+  <button onclick="sendData()">Submit</button>
+
+  <script>
+    let selectedImage = "";
+    let selectedElement = null;
+
+    function selectImage(el, img) {
+      if(selectedElement) selectedElement.classList.remove("selected");
+      selectedElement = el;
+      el.classList.add("selected");
+      selectedImage = img;
+    }
+
+    function sendData() {
+      if(!selectedImage) {
+        alert("Please select an image first!");
+        return;
+      }
+
+      const model = document.getElementById("model").value;
+      const number = document.getElementById("number").value;
+
+      const data = { image: selectedImage, model: model, number: number };
+
+      fetch("https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLg3o3acEg-XWA1yvAltkJqh8C9Vz4CDblzCF_OsDP_44fPtjXzKUMGtsh_YjHyItZBG0bkkVHTww1sJFso7r9bYuLZ8jBMM_6Q0Z0r_8m4C3ZJq8CVVKYOx6rYvBYBD_XBekK7HvLD-VerSX7hPkJDC0uQ4Tz1ku62KCW9z7LR5rRnsloBYp5GRDA6RRR2l1MeCOmHFontgX_N9uSjmvR1owrd3W6M5UfsmDki80c8dUlD9YJM_lDe5vXHeWjOac_WBNF7-D2ApcxN8ifboyRLFsdaVh05qDurfXLi2&lib=MPozIie7Oha7jWMZfnmZXxsI06-eazese", { // ← Replace this
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(msg => {
+        if(msg.status === "success") alert("Submitted successfully!");
+        else alert("Error: " + msg.message);
+      })
+      .catch(err => alert("Fetch error: " + err));
+    }
+  </script>
+</body>
+</html>
