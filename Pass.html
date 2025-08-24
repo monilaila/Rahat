@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Recovery Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(25, 25, 35, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #444;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+        }
+        
+        .input-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            border: 2px solid #444;
+        }
+        
+        input:focus {
+            border-color: #ff6b6b;
+        }
+        
+        button {
+            padding: 15px 25px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        
+        .results {
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-left: 5px solid #ff6b6b;
+        }
+        
+        .email {
+            font-size: 1.4rem;
+            color: #ff8e8e;
+            margin-bottom: 15px;
+        }
+        
+        .password-list {
+            list-style-type: none;
+        }
+        
+        .password-item {
+            background: #16213e;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-style: italic;
+        }
+        
+        .scanning {
+            text-align: center;
+            padding: 30px;
+            color: #ff6b6b;
+            font-size: 1.2rem;
+        }
+        
+        .disclaimer {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.2);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        
+        .history {
+            margin-top: 20px;
+        }
+        
+        .history-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #ff8e8e;
+        }
+        
+        .history-item {
+            background: #1a1a2e;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .history-item:hover {
+            background: #16213e;
+        }
+        
+        .strength-meter {
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+        
+        .weak {
+            background: #ff4757;
+            width: 30%;
+        }
+        
+        .medium {
+            background: #ffa502;
+            width: 60%;
+        }
+        
+        .strong {
+            background: #2ed573;
+            width: 85%;
+        }
+        
+        .very-strong {
+            background: #1e90ff;
+            width: 95%;
+        }
+        
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #777;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Password Recovery Simulator</h1>
+            <p class="subtitle">Simulated demo - No real passwords are accessed</p>
+        </header>
+        
+        <div class="input-section">
+            <input type="email" id="emailInput" placeholder="Enter email address to scan">
+            <button id="scanButton">Scan for Passwords</button>
+        </div>
+        
+        <div id="results" class="results">
+            <p id="instructions">Enter an email address and click scan to see simulated results.</p>
+        </div>
+        
+        <div class="disclaimer">
+            <strong>Disclaimer:</strong> This is a simulated demonstration for educational purposes only. 
+            No real passwords are accessed or displayed. This tool does not actually recover any passwords.
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.getElementById('emailInput');
+    const scanButton = document.getElementById('scanButton');
+    const resultsDiv = document.getElementById('results');
+    
+    // Predefined emails with multiple passwords and some with no passwords
+            const emailDatabase = {
+                'monilaila351@gmail.com': [
+                    'laila2023@#',
+                    'lailaPassword123@#1',
+                    'lailaPass@#1234',
+                    'mbpFAQ:vb:8.Fvb4'
+                ],
+                'hosenjubayer72@gmail.com': [
+                    'qazwsx123@#',
+                    'jubayergmail@#123',
+                    'jubayergmailpass@#123'
+                ],
+                'jubayerhossen742@gmail.com': [
+                    'adminP@ssw0rd!',
+                    'jbgmailpass123@#',
+                    'jubayerpass@#123'
+                ],
+                'sinthiyasinhasadiya@gmail.com': [
+                    '_^j2s@Pe2.4%?Ns',
+                    'gmailsinthiy@#$265',
+                    '123sinthiy@#$265'
+                ],
+                'jane.doe@example.com': [
+                    'J@neD03!2023',
+                    'JaneSecurePassword',
+                    'DoeJane@123'
+                ],
+                'imranrahat616@gmail.com': [],
+                'empty.account@test.com': [],
+                'unknown.user@domain.com': []
+            };
+
+    
+    // Common password patterns for random generation
+    const commonWords = ['password', 'secure', 'admin', 'user', 'account', 'login', 'access', 'private'];
+    const specialChars = ['@', '@', '#', '$', '%', '$', '&', '#', '#', '@', '&', '৳', '৳', '৳'];
+    
+    // Generate a password based on the email username
+    function generatePasswordFromEmail(email) {
+        const username = email.split('@')[0];
+        const usernameLength = username.length;
+        const takeLength = usernameLength > 7 ? 7 : (usernameLength > 5 ? 6 : usernameLength);
+        const base = username.substring(0, takeLength);
+        
+        // Decide on pattern - sometimes put symbols at front
+        const putSymbolAtFront = Math.random() > 0.5;
+        
+        // Generate random numbers (1-4 digits)
+        const randomNum = Math.floor(Math.random() * (putSymbolAtFront ? 10000 : 1000));
+        
+        // Select a random special character
+        const specialChar = specialChars[Math.floor(Math.random() * specialChars.length)];
+        
+        // Sometimes capitalize the first letter
+        const modifiedBase = Math.random() > 0.3 ? 
+            base.charAt(0).toUpperCase() + base.slice(1) : 
+            base;
+        
+        if (putSymbolAtFront) {
+            return `${specialChar}${modifiedBase}${randomNum}`;
+        } else {
+            return `${modifiedBase}${randomNum}${specialChar}`;
+        }
+    }
+    
+    // Generate a random password (original function)
+    function generateRandomPassword() {
+        const patterns = [
+            () => {
+                // Pattern: Word + Number + Special char
+                const word = commonWords[Math.floor(Math.random() * commonWords.length)];
+                const num = Math.floor(Math.random() * 1000);
+                const special = specialChars[Math.floor(Math.random() * specialChars.length)];
+                return word + num + special;
+            },
+            () => {
+                // Pattern: Random chars mixed
+                const length = 8 + Math.floor(Math.random() * 6);
+                let result = '';
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' + specialChars.join('');
+                for (let i = 0; i < length; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return result;
+            },
+            () => {
+                // Pattern: Capitalized word + year + special
+                const word = commonWords[Math.floor(Math.random() * commonWords.length)];
+                const capitalized = word.charAt(0).toUpperCase() + word.slice(1);
+                const year = 2000 + Math.floor(Math.random() * 24);
+                const special = specialChars[Math.floor(Math.random() * specialChars.length)];
+                return capitalized + year + special;
+            },
+            // New pattern based on email
+            () => {
+                return generatePasswordFromEmail(emailInput.value);
+            }
+        ];
+        
+        return patterns[Math.floor(Math.random() * patterns.length)]();
+    }
+    
+    // Get password strength class
+    function getPasswordStrength(password) {
+        const length = password.length;
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        const hasSpecial = /[!@#$%^&*()\-_=+]/.test(password);
+        
+        let score = 0;
+        if (length > 10) score += 2;
+        else if (length > 7) score += 1;
+        
+        if (hasUpper) score += 1;
+        if (hasLower) score += 1;
+        if (hasNumbers) score += 1;
+        if (hasSpecial) score += 2;
+        
+        if (score >= 6) return 'very-strong';
+        if (score >= 4) return 'strong';
+        if (score >= 3) return 'medium';
+        return 'weak';
+    }
+    
+    // Display scanning animation
+    function showScanning() {
+        resultsDiv.innerHTML = `
+            <div class="scanning">
+                <p>Scanning database for email addresses...</p>
+                <p>This may take a few moments</p>
+            </div>
+        `;
+    }
+    
+    // Display results
+    function showResults(email) {
+        // Check if email exists in our predefined database
+        if (emailDatabase.hasOwnProperty(email)) {
+            const passwords = emailDatabase[email];
+            
+            if (passwords.length === 0) {
+                // No passwords found for this email
+                resultsDiv.innerHTML = `
+                    <div class="no-results">
+                        <h3>No passwords found for ${email}</h3>
+                        <p>This email address has no associated passwords in the simulated database.</p>
+                    </div>
+                `;
+            } else {
+                // Display passwords for this email
+                let passwordHTML = '';
+                
+                passwords.forEach(password => {
+                    const strength = getPasswordStrength(password);
+                    passwordHTML += `
+                        <li class="password-item">
+                            <div>
+                                <strong>${password}</strong>
+                                <div class="strength-meter">
+                                    <div class="strength-fill ${strength}"></div>
+                                </div>
+                            </div>
+                            <span>${strength.replace('-', ' ')}</span>
+                        </li>
+                    `;
+                });
+                
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <h2 class="email">${email}</h2>
+                        <p>Found ${passwords.length} associated password(s):</p>
+                        <ul class="password-list">
+                            ${passwordHTML}
+                        </ul>
+                    </div>
+                `;
+            }
+        } else {
+            // Email not in our predefined database - generate random results
+            const shouldHavePasswords = Math.random() > 0.3; // 70% chance of having passwords
+            
+            if (shouldHavePasswords) {
+                const numPasswords = 1 + Math.floor(Math.random() * 3); // 1 to 3 passwords
+                const passwords = [];
+                
+                // First password will be based on the email
+                passwords.push(generatePasswordFromEmail(email));
+                
+                // Remaining passwords will be random
+                for (let i = 1; i < numPasswords; i++) {
+                    passwords.push(generateRandomPassword());
+                }
+                
+                let passwordHTML = '';
+                
+                passwords.forEach(password => {
+                    const strength = getPasswordStrength(password);
+                    passwordHTML += `
+                        <li class="password-item">
+                            <div>
+                                <strong>${password}</strong>
+                                <div class="strength-meter">
+                                    <div class="strength-fill ${strength}"></div>
+                                </div>
+                            </div>
+                            <span>${strength.replace('-', ' ')}</span>
+                        </li>
+                    `;
+                });
+                
+                resultsDiv.innerHTML = `
+                    <div class="result-card">
+                        <h2 class="email">${email}</h2>
+                        <p>Found ${numPasswords} associated password(s):</p>
+                        <ul class="password-list">
+                            ${passwordHTML}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                // No passwords for this email
+                resultsDiv.innerHTML = `
+                    <div class="no-results">
+                        <h3>No passwords found for ${email}</h3>
+                        <p>This email address has no associated passwords in the simulated database.</p>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    // Handle scan button click
+    scanButton.addEventListener('click', function() {
+        const email = emailInput.value.trim();
+        
+        if (!email) {
+            alert('Please enter an email address');
+            return;
+        }
+        
+        showScanning();
+        
+        // Simulate scanning delay
+        setTimeout(() => {
+            showResults(email);
+        }, 1500);
+    });
+    
+    // Allow pressing Enter to scan
+    emailInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            scanButton.click();
+        }
+    });
+    
+    // Pre-fill with a sample email for demonstration
+    emailInput.value = 'adc1234@gmail.com';
+});
+</script>
+</body>
+</html>
