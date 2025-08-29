@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #121212; /* Dark background */
+            color: #ffffff; /* Light text */
+            overflow: hidden;
+            position: relative;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #f0f0f0;
+            text-shadow: 0 0 10px #007BFF; /* Glowing text effect */
+        }
+
+        /* Glowing lines on hover */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 0;
+        }
+
+        body:hover::before, body:hover::after {
+            opacity: 0.2;
+        }
+
+        body::before {
+            background: radial-gradient(circle, rgba(0, 123, 255, 0.6) 0%, rgba(0, 123, 255, 0) 70%);
+            transform: scale(1.5);
+            animation: glowing 1.5s infinite alternate;
+        }
+
+        body::after {
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+            transform: scale(1.2);
+            animation: glowing 2s infinite alternate;
+        }
+
+        @keyframes glowing {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        #container {
+            background: rgba(255, 255, 255, 0.1); /* Slightly transparent white for the container */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            width: 300px;
+            text-align: center;
+            z-index: 1; /* Ensure the container is above the background */
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ffffff; /* Light text for labels */
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #qr-code {
+            position: relative;
+            margin-top: 20px;
+        }
+
+        #qr-code img {
+            display: block;
+        }
+
+        .download-btn {
+            background: #28a745; /* Green background for download button */
+            margin-top: 10px;
+        }
+
+        .download-btn:hover {
+            background: #218838; /* Darker green on hover */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        function generateQRCode() {
+            const qrContainer = document.getElementById('qr-code');
+            qrContainer.innerHTML = ''; // Clear previous QR code
+            const qrType = document.getElementById('qr-type').value;
+            let qrData = '';
+
+            if (qrType === 'text') {
+                qrData = document.getElementById('text-input').value;
+            } else if (qrType === 'url') {
+                qrData = document.getElementById('url-input').value;
+            } else if (qrType === 'mobile') {
+                qrData = 'tel:' + document.getElementById('mobile-input').value;
+            } else if (qrType === 'wifi') {
+                const ssid = document.getElementById('wifi-ssid').value;
+                const password = document.getElementById('wifi-password').value;
+                const encryption = document.getElementById('wifi-encryption').value;
+                qrData = `WIFI:S:${ssid};T:${encryption};P:${password};;`;
+            } else if (qrType === 'location') {
+                const latitude = document.getElementById('location-latitude').value;
+                const longitude = document.getElementById('location-longitude').value;
+                qrData = `geo:${latitude},${longitude}`;
+            }
+
+            new QRCode(qrContainer, {
+                text: qrData,
+                width: 300,
+                height: 300
+            });
+        }
+
+        function downloadQRCode() {
+            const qrCodeImg = document.querySelector('#qr-code img');
+            if (qrCodeImg) {
+                const link = document.createElement('a');
+                link.href = qrCodeImg.src; // Get the source of the QR code image
+                link.download = 'qr_code.png'; // Set the name for the downloaded file
+                link.click(); // Trigger the download
+            } else {
+                alert('Please generate a QR code before downloading.');
+            }
+        }
+
+        function updateForm() {
+            const qrType = document.getElementById('qr-type').value;
+            document.getElementById('text-group').style.display = (qrType === 'text') ? 'block' : 'none';
+            document.getElementById('url-group').style.display = (qrType === 'url') ? 'block' : 'none';
+            document.getElementById('mobile-group').style.display = (qrType === 'mobile') ? 'block' : 'none';
+            document.getElementById('wifi-group').style.display = (qrType === 'wifi') ? 'block' : 'none';
+            document.getElementById('location-group').style.display = (qrType === 'location') ? 'block' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            updateForm(); // Set initial state of form
+            document.getElementById('qr-type').addEventListener('change', updateForm);
+
+            // Instant QR code generation on input
+            const inputs = document.querySelectorAll('.input-group input');
+            inputs.forEach(input => {
+                input.addEventListener('input', generateQRCode);
+            });
+        });
+    </script>
+</head>
+<body>
+    <div id="container">
+        <h1>QR Code Generator</h1>
+        <div class="input-group">
+            <label for="qr-type">Select QR Code Type:</label>
+            <select id="qr-type">
+                <option value="text">General Text</option>
+                <option value="url">URL</option>
+                <option value="mobile">Mobile Number</option>
+                <option value="wifi">Wi-Fi</option>
+                <option value="location">Location</option>
+            </select>
+        </div>
+
+        <div id="text-group" class="input-group">
+            <label for="text-input">Enter Text:</label>
+            <input type="text" id="text-input" placeholder="Enter your text">
+        </div>
+
+        <div id="url-group" class="input-group">
+            <label for="url-input">Enter URL:</label>
+            <input type="url" id="url-input" placeholder="https://example.com">
+        </div>
+
+        <div id="mobile-group" class="input-group">
+            <label for="mobile-input">Enter Mobile Number:</label>
+            <input type="tel" id="mobile-input" placeholder="e.g. +1234567890">
+        </div>
+
+        <div id="wifi-group" class="input-group">
+            <label for="wifi-ssid">Wi-Fi SSID:</label>
+            <input type="text" id="wifi-ssid" placeholder="Enter Wi-Fi SSID">
+            <label for="wifi-password">Wi-Fi Password:</label>
+            <input type="password" id="wifi-password" placeholder="Enter Wi-Fi Password">
+            <label for="wifi-encryption">Wi-Fi Encryption:</label>
+            <select id="wifi-encryption">
+                <option value="WPA">WPA/WPA2</option>
+                <option value="WEP">WEP</option>
+                <option value="nopass">None</option>
+            </select>
+        </div>
+
+        <div id="location-group" class="input-group">
+            <label for="location-latitude">Latitude:</label>
+            <input type="text" id="location-latitude" placeholder="Enter Latitude">
+            <label for="location-longitude">Longitude:</label>
+            <input type="text" id="location-longitude" placeholder="Enter Longitude">
+        </div>
+
+        <!-- <button onclick="generateQRCode()">Generate QR Code</button> -->
+        <div id="qr-code"></div>
+        <button class="download-btn" onclick="downloadQRCode()">Download QR Code</button>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+<!-- 
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+
+        input[type="text"] {
+            width: 300px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #qrcode {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code Generator</h1>
+    <input type="text" id="notepadText" placeholder="Enter text for QR Code" />
+    <div id="qrcode"></div>
+
+    <script>
+        $(document).ready(function() {
+            const defaultText = ""; // Replace this with your desired text
+
+            // Automatically generate QR code on page load
+            function generateQRCode(text) {
+                $('#qrcode').empty(); // Clear previous QR code
+                if (text) {
+                    $('#qrcode').qrcode({
+                        text: text,
+                        width: 128,
+                        height: 128,
+                    });
+                }
+            }
+
+            // Check input and generate QR code
+            $('#notepadText').on('input', function() {
+                const text = $(this).val();
+                generateQRCode(text);
+            });
+
+            // Initialize with default text if desired
+            $('#notepadText').val(defaultText);
+            generateQRCode(defaultText);
+        });
+    </script>
+</body>
+</html> -->
