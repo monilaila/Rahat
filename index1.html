@@ -1,81 +1,129 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Gallery Submission</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Gallery with Form</title>
   <style>
-    #gallery img {
-      width: 150px;
-      margin: 10px;
-      cursor: pointer;
-      border: 2px solid transparent;
-    }
-    #gallery img.selected {
-      border: 2px solid blue;
-    }
+    body { font-family: Arial, sans-serif; margin:0; padding:20px; text-align:center; background:#f0f2f5; }
+    .gallery { margin-bottom: 20px; }
+    .main-image img { width:400px; height:auto; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.2); }
+    .navigation-buttons { margin:10px; }
+    .navigation-buttons button { padding:8px 12px; margin:5px; font-size:16px; border-radius:5px; border:none; cursor:pointer; background-color:#007bff; color:white; transition:0.2s; }
+    .navigation-buttons button:hover { background-color:#0056b3; }
+    .thumbnails { margin-top:15px; display:flex; justify-content:center; gap:15px; flex-wrap:wrap; }
+    .thumbnail-item { text-align:center; cursor:pointer; }
+    .thumbnails img { width:100px; height:auto; border-radius:5px; border:2px solid transparent; transition:transform 0.2s, border 0.2s; }
+    .thumbnails img:hover { transform:scale(1.1); border:2px solid #007bff; }
+    .form-section { margin-top:20px; }
+    select, input, button { padding:8px 12px; margin:8px; font-size:16px; }
+    button.submit-btn { background-color:#28a745; }
+    button.submit-btn:hover { background-color:#218838; }
+    .success-screen { display:none; margin-top:50px; font-size:24px; color:green; font-weight:bold; }
+    .success-screen button { background-color:#007bff; color:white; padding:8px 12px; border:none; border-radius:5px; cursor:pointer; }
   </style>
 </head>
 <body>
-  <h1>Pick an Image & Submit</h1>
 
-  <!-- Gallery -->
-  <div id="gallery">
-    <img src="https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg" alt="Cat" onclick="selectImage(this,'cat')">
-    <img src="https://cdn.pixabay.com/photo/2025/01/19/19/17/bird-9345016_1280.jpg" alt="Dog" onclick="selectImage(this,'dog')">
-    <img src="https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg" alt="Bird" onclick="selectImage(this,'bird')">
+  <div class="gallery">
+    <div class="main-image">
+      <img id="mainImage" src="https://cdn.pixabay.com/photo/2025/01/19/19/17/bird-9345016_1280.jpg" alt="Main Image">
+      <div id="mainImageTitle" style="margin-top:10px; font-weight:bold;">Bird</div>
+    </div>
+
+    <div class="navigation-buttons">
+      <button onclick="prevImage()">Previous</button>
+      <button onclick="nextImage()">Next</button>
+    </div>
+
+    <div class="thumbnails" id="thumbnails">
+      <div class="thumbnail-item">
+        <img src="https://cdn.pixabay.com/photo/2025/01/19/19/17/bird-9345016_1280.jpg" onclick="selectImage(0)">
+        <div>Bird</div>
+      </div>
+      <div class="thumbnail-item">
+        <img src="https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg" onclick="selectImage(1)">
+        <div>Daisies</div>
+      </div>
+    </div>
   </div>
 
-  <!-- Model + Number -->
-  <label>Model:
-    <select id="model">
-      <option value="Model A">Model A</option>
-      <option value="Model B">Model B</option>
+  <div class="form-section">
+    <label for="nameSelect">Choose a name:</label>
+    <select id="nameSelect">
+      <option value="Alice">Alice</option>
+      <option value="Bob">Bob</option>
+      <option value="Charlie">Charlie</option>
     </select>
-  </label>
-  <br>
-  <label>Number:
-    <input type="number" id="number" min="1" value="1">
-  </label>
-  <br><br>
 
-  <!-- Submit -->
-  <button onclick="sendData()">Submit</button>
+    <label for="numberInput">Enter a number:</label>
+    <input type="number" id="numberInput" min="1" placeholder="Enter number">
+
+    <button class="submit-btn" onclick="submitForm()">Submit</button>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    ✅ Successful! Your submission was recorded.
+    <br><br>
+    <button onclick="goBack()">Back</button>
+  </div>
 
   <script>
-    let selectedImage = "";
-    let selectedElement = null;
+    const images = [
+      { url:"https://cdn.pixabay.com/photo/2025/01/19/19/17/bird-9345016_1280.jpg", title:"Bird" },
+      { url:"https://cdn.pixabay.com/photo/2024/05/19/13/27/daisies-8772617_1280.jpg", title:"Daisies" }
+    ];
 
-    function selectImage(el, img) {
-      if(selectedElement) selectedElement.classList.remove("selected");
-      selectedElement = el;
-      el.classList.add("selected");
-      selectedImage = img;
+    let currentIndex = 0;
+
+    function selectImage(index){
+      currentIndex = index;
+      document.getElementById("mainImage").src = images[index].url;
+      document.getElementById("mainImageTitle").textContent = images[index].title;
     }
 
-    function sendData() {
-      if(!selectedImage) {
-        alert("Please select an image first!");
+    function nextImage(){
+      currentIndex = (currentIndex + 1) % images.length;
+      selectImage(currentIndex);
+    }
+
+    function prevImage(){
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+      selectImage(currentIndex);
+    }
+
+    async function submitForm(){
+      const name = document.getElementById("nameSelect").value;
+      const number = document.getElementById("numberInput").value;
+      const image = images[currentIndex].title;
+
+      if(!name || !number){
+        alert("Please fill all fields!");
         return;
       }
 
-      const model = document.getElementById("model").value;
-      const number = document.getElementById("number").value;
+      // 🔴 Replace with your deployed Google Apps Script URL
+      const scriptURL = "https://script.google.com/macros/s/AKfycbxQanZnfkZLXxGxjd8WR9TkciULf0djLt65sGmteH_QqZzscfRO6aE01enkRkkXhA5GBw/exec";
 
-      const data = { image: selectedImage, model: model, number: number };
+      const url = `${scriptURL}?path=Sheet1&action=write&Image=${encodeURIComponent(image)}&Name=${encodeURIComponent(name)}&Number=${encodeURIComponent(number)}`;
 
-      fetch("https://script.google.com/macros/s/AKfycbx4W0u_AHXNSAkGi5VEUJwVyipKToDyBuMCsRY68aqAGSW29yKNTybA82ESOab1jK0YGQ/exec", { // ← Replace this
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      })
-      .then(res => res.json())
-      .then(msg => {
-        if(msg.status === "success") alert("Submitted successfully!");
-        else alert("Error: " + msg.message);
-      })
-      .catch(err => alert("Fetch error: " + err));
+      try {
+        await fetch(url);
+        document.querySelector(".gallery").style.display = "none";
+        document.querySelector(".form-section").style.display = "none";
+        document.getElementById("successScreen").style.display = "block";
+      } catch(err){
+        alert("Error submitting data: " + err);
+        console.error(err);
+      }
+    }
+
+    function goBack(){
+      document.querySelector(".gallery").style.display = "block";
+      document.querySelector(".form-section").style.display = "block";
+      document.getElementById("successScreen").style.display = "none";
     }
   </script>
+
 </body>
 </html>
-
-
