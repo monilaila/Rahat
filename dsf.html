@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive SVG Grid Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        svg {
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="range"], input[type="number"], input[type="color"] {
+            width: 100%;
+        }
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            position: relative;
+        }
+        .color-swatch:hover::after {
+            content: '✕';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: red;
+            color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        button {
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button.secondary {
+            background: #2196F3;
+        }
+        button.danger {
+            background: #f44336;
+        }
+        .value-display {
+            font-size: 0.9em;
+            color: #666;
+        }
+        #gridContainer {
+            overflow: auto;
+            max-width: 100%;
+        }
+        .action-buttons {
+            grid-column: span 2;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="controls">
+    <div class="control-group">
+        <label for="colsInput">Columns:</label>
+        <input type="number" id="colsInput" min="5" max="200" value="77">
+    </div>
+    
+    <div class="control-group">
+        <label for="rowsInput">Rows:</label>
+        <input type="number" id="rowsInput" min="5" max="100" value="23">
+    </div>
+    
+    <div class="control-group">
+        <label for="emptinessSlider">Bottom Emptiness: <span id="emptinessValue">50%</span></label>
+        <input type="range" id="emptinessSlider" min="0" max="100" value="50">
+    </div>
+    
+    <div class="control-group">
+        <label for="speedSlider">Animation Speed: <span id="speedValue">1x</span></label>
+        <input type="range" id="speedSlider" min="0.1" max="5" step="0.1" value="1">
+    </div>
+    
+    <div class="control-group">
+        <label for="roseColumnsInput">Rose Columns: <span id="roseCountValue">0</span></label>
+        <div>
+            <button id="addRoseBtn" class="secondary">Add Random</button>
+            <button id="clearRoseBtn" class="danger">Clear All</button>
+        </div>
+    </div>
+    
+    <div class="control-group" style="grid-column: span 2;">
+        <label>Color Palette:</label>
+        <div>
+            <input type="color" id="newColorInput" value="#FF0000">
+            <button id="addColorBtn">Add Color</button>
+        </div>
+        <div class="color-palette" id="colorPalette"></div>
+    </div>
+    
+    <div class="action-buttons">
+        <button id="downloadBtn" class="secondary">Download SVG</button>
+    </div>
+</div>
+
+<div id="gridContainer"></div>
+
+<script>
+// Configuration
+const config = {
+    rectWidth: 17.2468,
+    rectHeight: 18.0779,
+    colorPalette: [
+        "#CA071A", "#F9A900", "#FFFDF5", "#5E007E", 
+        "#151515", "#001847", "#C238DA", "#FF5900"
+    ],
+    roseColors: ["#FFC0CB", "#FF69B4", "#FF1493", "#DB7093", "#C71585"],
+    animationDurationRange: [4, 8],
+    startDelayRange: [0, 2],
+    roseColumns: new Set(),
+    animationSpeed: 1
+};
+
+// DOM elements
+const colsInput = document.getElementById('colsInput');
+const rowsInput = document.getElementById('rowsInput');
+const emptinessSlider = document.getElementById('emptinessSlider');
+const emptinessValue = document.getElementById('emptinessValue');
+const speedSlider = document.getElementById('speedSlider');
+const speedValue = document.getElementById('speedValue');
+const addRoseBtn = document.getElementById('addRoseBtn');
+const clearRoseBtn = document.getElementById('clearRoseBtn');
+const roseCountValue = document.getElementById('roseCountValue');
+const newColorInput = document.getElementById('newColorInput');
+const addColorBtn = document.getElementById('addColorBtn');
+const colorPalette = document.getElementById('colorPalette');
+const gridContainer = document.getElementById('gridContainer');
+const downloadBtn = document.getElementById('downloadBtn');
+
+// Initialize color palette display
+function renderColorPalette() {
+    colorPalette.innerHTML = '';
+    config.colorPalette.forEach((color, index) => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.backgroundColor = color;
+        swatch.title = color;
+        swatch.onclick = (e) => {
+            if (e.target === swatch) {
+                config.colorPalette.splice(index, 1);
+                renderColorPalette();
+                generateGrid();
+            }
+        };
+        colorPalette.appendChild(swatch);
+    });
+}
+
+// Add new color
+addColorBtn.addEventListener('click', () => {
+    const newColor = newColorInput.value;
+    if (newColor && !config.colorPalette.includes(newColor)) {
+        config.colorPalette.push(newColor);
+        renderColorPalette();
+        generateGrid();
+    }
+});
+
+// Rose columns management
+addRoseBtn.addEventListener('click', () => {
+    const cols = parseInt(colsInput.value);
+    const col = Math.floor(Math.random() * cols);
+    config.roseColumns.add(col);
+    roseCountValue.textContent = config.roseColumns.size;
+    generateGrid();
+});
+
+clearRoseBtn.addEventListener('click', () => {
+    config.roseColumns.clear();
+    roseCountValue.textContent = '0';
+    generateGrid();
+});
+
+// Update display values
+emptinessSlider.addEventListener('input', function() {
+    emptinessValue.textContent = this.value + '%';
+    generateGrid();
+});
+
+// Speed control
+speedSlider.addEventListener('input', function() {
+    config.animationSpeed = parseFloat(this.value);
+    speedValue.textContent = this.value + 'x';
+    generateGrid();
+});
+
+// Download SVG
+downloadBtn.addEventListener('click', function() {
+    const svgElement = gridContainer.querySelector('svg');
+    if (!svgElement) return;
+    
+    const serializer = new XMLSerializer();
+    let svgStr = serializer.serializeToString(svgElement);
+    
+    // Add namespace if not present
+    if (!svgStr.includes('xmlns="http://www.w3.org/2000/svg"')) {
+        svgStr = svgStr.replace(/<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    
+    // Convert SVG to data URL
+    const svgBlob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    
+    // Create download link
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = 'grid-artwork.svg';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+});
+
+// Generate grid with gradient emptiness
+function generateGrid() {
+    gridContainer.innerHTML = '';
+    
+    const cols = parseInt(colsInput.value);
+    const rows = parseInt(rowsInput.value);
+    const width = cols * config.rectWidth;
+    const height = rows * config.rectHeight;
+    const emptinessIntensity = parseInt(emptinessSlider.value) / 100;
+    
+    // Create SVG
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", width);
+    svg.setAttribute("height", height);
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    
+    // Generate grid with gradient emptiness
+    for (let row = 0; row < rows; row++) {
+        // Calculate emptiness factor for this row (0 at top, increasing toward bottom)
+        const rowProgress = row / rows;
+        const emptinessFactor = rowProgress * emptinessIntensity;
+        
+        for (let col = 0; col < cols; col++) {
+            // Skip cells based on emptiness factor
+            if (Math.random() < emptinessFactor) continue;
+            
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute("x", col * config.rectWidth);
+            rect.setAttribute("y", row * config.rectHeight);
+            rect.setAttribute("width", config.rectWidth);
+            rect.setAttribute("height", config.rectHeight);
+            
+            // Determine if this is a rose column
+            const isRoseColumn = config.roseColumns.has(col);
+            const colors = isRoseColumn ? config.roseColors : config.colorPalette;
+            
+            // Skip if no colors available
+            if (colors.length === 0) continue;
+            
+            // About 10% of rectangles will be static (no animation)
+            if (Math.random() > 0.1) {
+                const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+                
+                // Create a shuffled version of the colors for this rectangle
+                const shuffledColors = [...colors]
+                    .sort(() => 0.5 - Math.random())
+                    .concat(colors[0]); // Loop back to first color
+                
+                animate.setAttribute("attributeName", "fill");
+                animate.setAttribute("values", shuffledColors.join(';'));
+                animate.setAttribute("dur", `${(4 + Math.random() * 4) / config.animationSpeed}s`);
+                animate.setAttribute("begin", `${Math.random() * 2 / config.animationSpeed}s`);
+                animate.setAttribute("repeatCount", "indefinite");
+                animate.setAttribute("calcMode", "discrete");
+                
+                rect.appendChild(animate);
+                rect.setAttribute("fill", shuffledColors[0]);
+            } else {
+                rect.setAttribute("fill", colors[Math.floor(Math.random() * colors.length)]);
+            }
+            
+            svg.appendChild(rect);
+        }
+    }
+    
+    gridContainer.appendChild(svg);
+}
+
+// Set up real-time controls
+colsInput.addEventListener('input', generateGrid);
+rowsInput.addEventListener('input', generateGrid);
+
+// Initialize
+renderColorPalette();
+generateGrid();
+</script>
+</body>
+</html>
