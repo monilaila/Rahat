@@ -1,0 +1,851 @@
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traditional Bangladeshi Clothing</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Merriweather", serif;
+      line-height: 1.6;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+
+/* Navigation */
+nav {
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  z-index: 1000;
+}
+
+/* Logo */
+nav .logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #8b0000;
+}
+
+/* Nav Links */
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+}
+
+nav li a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+nav li a:hover {
+  background-color: #8b0000;
+  color: white;
+}
+
+nav li a .icon {
+  font-size: 1.2rem;
+}
+
+/* Option: Hide text if needed */
+nav.only-icons .nav-text {
+  display: none;
+}
+
+/* Hamburger for Mobile */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  gap: 5px;
+}
+
+.hamburger span {
+  width: 25px;
+  height: 3px;
+  background-color: #333;
+  border-radius: 2px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  nav ul {
+    position: absolute;
+    top: 70px;
+    right: 0;
+    flex-direction: column;
+    background: white;
+    width: 200px;
+    padding: 20px;
+    gap: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    display: none;
+  }
+
+  nav ul.show {
+    display: flex;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
+
+
+
+
+
+
+
+
+    /* Hero Section */
+    .hero {
+      height: 100vh;
+      max-width: 1919px;
+      margin: auto;
+      background: url("https://dims.apnews.com/dims4/default/2359f1b/2147483647/strip/false/crop/8192x5461+0+0/resize/1486x991!/quality/90/?url=https%3A%2F%2Fassets.apnews.com%2F91%2Fdb%2F7e9bac124b49cb47b8b673f29512%2Fef3007f17777460ea38ce6b8fa6c9ef0") 
+        no-repeat center center/cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+    }
+
+    .hero-text {
+      position: relative;
+      font-size: 3rem;
+      font-weight: bold;
+      z-index: 1;
+      padding: 20px 40px;
+      will-change: transform;
+    }
+
+    /* Section styling */
+    section {
+      padding: 100px 20px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    section h2 {
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+      color: #444;
+    }
+
+    section p {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+
+    /* Alternating layouts */
+    .image-text {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      margin-bottom: 80px;
+    }
+
+    .image-text img {
+      width: 50%;
+      border-radius: 15px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+
+    .image-text .text {
+      width: 50%;
+    }
+
+    .reverse {
+      flex-direction: row-reverse;
+    }
+
+
+
+
+
+
+
+
+
+
+/* Artists Section */
+#artists {
+  padding: 60px 20px;
+  /* background: #fafafa; */
+  text-align: center;
+}
+
+#artists h2 {
+  font-size: 2.2rem;
+  margin-bottom: 40px;
+  font-family: "Merriweather", serif;
+  color: #222;
+}
+
+/* Horizontal scrolling container */
+.artists-container {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Remove ugly scrollbar on Chrome/Edge/Safari */
+.artists-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Artist card */
+.artist-card {
+  flex: 0 0 260px; /* fixed width */
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  text-align: left; /* content aligned properly */
+  overflow: hidden;
+  scroll-snap-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.artist-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Artist image */
+.artist-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Artist info */
+.artist-info {
+  padding: 16px;
+}
+
+.artist-info h3 {
+  margin: 0 0 6px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.artist-info p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+
+
+
+
+
+
+
+
+
+    
+
+    /* CTA */
+    .cta {
+      background: #8b0000;
+      color: white;
+      padding: 20px 40px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 1.2rem;
+      transition: background 0.3s;
+      display: inline-block;
+    }
+
+    .cta:hover {
+      background: #b30000;
+    }
+
+    /* Footer */
+.footer {
+  background-color: #8b0000; /* Dark red */
+  color: #fff;
+  padding: 50px 20px 20px 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.footer-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 40px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.footer-about, .footer-contact, .footer-social {
+  flex: 1;
+  min-width: 250px;
+}
+
+.footer-about h3 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  color: #ffd700; /* Gold for tradition highlight */
+}
+
+.footer-contact h4,
+.footer-social h4 {
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #ffd700;
+  display: inline-block;
+  padding-bottom: 5px;
+}
+
+.footer p {
+  margin: 5px 0;
+}
+
+.social-icons {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.social-icons img {
+  width: 35px;
+  height: 35px;
+  transition: transform 0.3s;
+}
+
+.social-icons img:hover {
+  transform: scale(1.2);
+}
+
+.footer-bottom {
+  text-align: center;
+  padding: 15px 0;
+  margin-top: 30px;
+  border-top: 1px solid rgba(255,255,255,0.3);
+  font-size: 0.9rem;
+  color: #f0e68c; /* light gold for text */
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 30px;
+  }
+  
+  .social-icons {
+    justify-content: center;
+  }
+}
+
+
+
+
+
+
+
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .image-text {
+        flex-direction: column;
+      }
+      .image-text img,
+      .image-text .text {
+        width: 100%;
+      }
+      .hero-text {
+        font-size: 2rem;
+        padding: 10px;
+      }
+    }
+  </style>
+
+
+
+
+
+
+
+
+
+  <!-- Gallery -->
+<style>
+  .gallery-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 50px 0;
+}
+
+.gallery-container img {
+  width: 250px;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s;
+}
+
+.gallery-container img:hover {
+  transform: scale(1.05);
+}
+
+</style>
+
+
+  <!-- details -->
+<style>
+  .details-container {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+  padding: 50px 20px;
+  align-items: center;
+}
+
+.details-item {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  background-color: #f9f9f9; /* Different style */
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.details-item img {
+  width: 300px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 15px;
+}
+
+.details-item .text {
+  flex: 1;
+}
+
+.details-item.reverse {
+  flex-direction: row-reverse;
+}
+
+</style>
+
+
+
+
+
+
+
+
+
+</head>
+<body>
+
+  <!-- Navigation -->
+<nav>
+  <div class="logo">Heritage Wear</div>
+  <ul>
+    <li><a href="#about"><span class="icon">🏠</span> <span class="nav-text">About</span></a></li>
+    <li><a href="#process"><span class="icon">🧵</span> <span class="nav-text">Process</span></a></li>
+    <li><a href="#artists"><span class="icon">🎨</span> <span class="nav-text">Artists</span></a></li>
+    <li><a href="#why"><span class="icon">❓</span> <span class="nav-text">Why</span></a></li>
+    <li><a href="#contact"><span class="icon">📞</span> <span class="nav-text">Contact</span></a></li>
+  </ul>
+
+  <!-- Mobile Hamburger -->
+  <div class="hamburger" id="hamburger">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</nav>
+
+
+
+
+  <!-- Hero -->
+
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-text">
+      Tradition of Bangladesh <br>
+      Our Heritage, Our Pride
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="light">
+    <h2>About Our Heritage Clothing</h2>
+    <p>
+      For centuries, Bangladeshi men’s clothing like <strong>Panjabi</strong>, <strong>Lungi</strong>, and 
+      <strong>handwoven fabrics</strong> have carried the stories of our villages.  
+      Each stitch reflects patience, artistry, and identity.
+    </p>
+  </section>
+
+
+
+
+<div id="content-sections"><section id="about">
+        <div class="image-text">
+          <div class="text">
+            <h2>About Our Heritage Clothing</h2>
+            <p>For centuries, Bangladeshi men’s clothing like Panjabi, Lungi, and handwoven fabrics have carried the stories of our villages. Each stitch reflects patience, artistry, and identity.</p>
+            
+          </div>
+          <img src="https://coimages.sciencemuseumgroup.org.uk/58/973/medium_2000_0807__0002_.jpg" alt="Heritage Clothing">
+        </div>
+      </section><section id="process">
+        <div class="image-text reverse">
+          <div class="text">
+            <h2>The Making Process</h2>
+            <p>From weaving threads on handlooms to natural dyeing and sewing, every piece is handmade by artisans who have preserved this knowledge for generations.</p>
+            
+          </div>
+          <img src="https://i.pinimg.com/736x/3a/c2/72/3ac272a6768f974228b8719aa6e885b3.jpg" alt="Weaving">
+        </div>
+      </section><section id="why">
+        <div class="image-text">
+          <div class="text">
+            <h2>Why It Matters</h2>
+            <p>This tradition is fading. By supporting handmade clothing, you are helping rural families, preserving cultural identity, and keeping alive one of Bangladesh’s proudest heritages.</p>
+            <a href="#shop" class="cta">Support the Tradition</a>
+          </div>
+          <img src="https://live.staticflickr.com/2142/2263711969_0dd23b7890_b.jpg" alt="Handloom">
+        </div>
+      </section></div>
+
+
+
+
+
+
+  <!-- Artists Section -->
+  <section id="artists">
+    <h2>Meet Our Artists</h2>
+    <div class="artists-container" id="artists-container"><div class="artist-card">
+            <img src="https://www.tbsnews.net/sites/default/files/styles/infograph/public/images/2024/01/16/05.jpg" alt="Abdul Karim">
+            <div class="artist-info">
+              <h3>Abdul Karim</h3>
+              <p>Master of Jamdani weaving, keeping alive Dhaka’s finest tradition.</p>
+            </div>
+          </div><div class="artist-card">
+            <img src="https://nijhoom.com/wp-content/uploads/2017/01/the-potter.jpg" alt="Fatema Begum">
+            <div class="artist-info">
+              <h3>Fatema Begum</h3>
+              <p>Renowned potter from Rajshahi, crafting heritage clay designs.</p>
+            </div>
+          </div><div class="artist-card">
+            <img src="https://www.shutterstock.com/image-photo/bangladesh-may-13-2018-village-600nw-1820262311.jpg" alt="Rashid Ahmed">
+            <div class="artist-info">
+              <h3>Rashid Ahmed</h3>
+              <p>Handloom expert preserving muslin weaving techniques.</p>
+            </div>
+          </div></div>
+  </section>
+
+
+  <!-- details -->
+<section id="details-section">
+  <div class="details-container"><div class="details-item ">
+        <div class="text">
+          <h2>Heritage Fabrics</h2>
+          <p>These fabrics are handwoven using traditional techniques passed down through generations. Each pattern tells a story of Bangladeshi culture.</p>
+        </div>
+        <img src="https://coimages.sciencemuseumgroup.org.uk/58/973/medium_2000_0807__0002_.jpg" alt="Heritage Fabric">
+      </div><div class="details-item reverse">
+        <div class="text">
+          <h2>Artisan Skills</h2>
+          <p>Our artisans spend hours perfecting each piece. Their skills include weaving, dyeing, and embroidery that reflect our rich cultural identity.</p>
+        </div>
+        <img src="https://i.pinimg.com/736x/3a/c2/72/3ac272a6768f974228b8719aa6e885b3.jpg" alt="Weaving Skill">
+      </div><div class="details-item ">
+        <div class="text">
+          <h2>Preserving Culture</h2>
+          <p>Supporting these traditional methods ensures that our heritage survives for future generations, keeping the artistry alive.</p>
+        </div>
+        <img src="https://live.staticflickr.com/2142/2263711969_0dd23b7890_b.jpg" alt="Handloom">
+      </div></div>
+</section>
+
+
+
+
+
+  <!-- Gallery -->
+<section id="gallery">
+  <h2>Gallery</h2>
+  <div class="gallery-container"><img src="https://coimages.sciencemuseumgroup.org.uk/58/973/medium_2000_0807__0002_.jpg" alt="Heritage Clothing"><img src="https://i.pinimg.com/736x/3a/c2/72/3ac272a6768f974228b8719aa6e885b3.jpg" alt="Weaving"><img src="https://live.staticflickr.com/2142/2263711969_0dd23b7890_b.jpg" alt="Handloom"></div>
+</section>
+
+
+
+
+
+  <!-- Footer -->
+<footer class="footer">
+  <div class="footer-content">
+    <!-- About / Mission -->
+    <div class="footer-about">
+      <h3>Heritage Wear</h3>
+      <p>
+        Celebrating the rich tradition of Bangladesh. Our handmade clothing preserves
+        cultural heritage, supporting artisans and keeping centuries-old craftsmanship alive.
+      </p>
+    </div>
+
+    <!-- Contact -->
+    <div class="footer-contact">
+      <h4>Contact Us</h4>
+      <p>📞 +880 198 765 4321</p>
+      <p>✉️ info@heritagewear.com</p>
+    </div>
+
+    <!-- Social Media -->
+    <div class="footer-social">
+      <h4>Follow Us</h4>
+      <div class="social-icons">
+        <a href="#"><img src="https://img.icons8.com/color/48/000000/facebook.png" alt="Facebook"></a>
+        <a href="#"><img src="https://img.icons8.com/color/48/000000/instagram-new.png" alt="Instagram"></a>
+        <a href="#"><img src="https://img.icons8.com/color/48/000000/twitter-squared.png" alt="Twitter"></a>
+        <a href="#"><img src="https://img.icons8.com/color/48/000000/linkedin.png" alt="LinkedIn"></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="footer-bottom">
+    © 2025 Heritage Wear. Handmade Traditional Clothing of Bangladesh. All rights reserved.
+  </div>
+</footer>
+
+
+
+
+
+
+
+
+  <!-- details -->
+<script>
+fetch('details.json')
+  .then(response => response.json())
+  .then(data => {
+    const container = document.querySelector('.details-container');
+    data.forEach((item, index) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'details-item ' + (index % 2 !== 0 ? 'reverse' : '');
+      
+      itemDiv.innerHTML = `
+        <div class="text">
+          <h2>${item.title}</h2>
+          <p>${item.text}</p>
+        </div>
+        <img src="${item.img}" alt="${item.alt}">
+      `;
+      
+      container.appendChild(itemDiv);
+    });
+  })
+  .catch(err => console.error('Error loading details JSON:', err));
+</script>
+
+
+
+
+  <!-- Artists Section -->
+  <script>
+    async function loadArtists() {
+      try {
+        const response = await fetch("artists.json");
+        const artists = await response.json();
+
+        const container = document.getElementById("artists-container");
+        container.innerHTML = ""; // Clear in case of reload
+
+        artists.forEach(artist => {
+          const card = document.createElement("div");
+          card.className = "artist-card";
+
+          card.innerHTML = `
+            <img src="${artist.image}" alt="${artist.name}">
+            <div class="artist-info">
+              <h3>${artist.name}</h3>
+              <p>${artist.detail}</p>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+      } catch (error) {
+        console.error("Error loading artists:", error);
+      }
+    }
+
+    loadArtists();
+  </script>
+
+
+
+  <!-- Gallery -->
+<script>
+fetch('images.json')
+  .then(response => response.json())
+  .then(data => {
+    const container = document.getElementById('content-sections');
+    data.forEach((item, index) => {
+      // Determine layout class
+      const layoutClass = (index % 2 === 0) ? 'image-text' : 'image-text reverse';
+
+      const section = document.createElement('section');
+      section.id = item.section;
+
+      section.innerHTML = `
+        <div class="${layoutClass}">
+          <div class="text">
+            <h2>${item.title}</h2>
+            <p>${item.text}</p>
+            ${item.section === 'why' ? '<a href="#shop" class="cta">Support the Tradition</a>' : ''}
+          </div>
+          <img src="${item.img}" alt="${item.alt}">
+        </div>
+      `;
+
+      container.appendChild(section);
+    });
+  })
+  .catch(err => console.error('Error loading JSON:', err));
+</script>
+
+
+
+
+
+  <!-- Navigation  -->
+  <script>
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.querySelector('nav ul');
+  
+  hamburger.addEventListener('click', () => {
+    navLinks.classList.toggle('show');
+  });
+  </script>
+
+
+<script>
+fetch('gallery.json')
+  .then(response => response.json())
+  .then(data => {
+    const gallery = document.querySelector('.gallery-container');
+    data.forEach(item => {
+      const imgEl = document.createElement('img');
+      imgEl.src = item.img;
+      imgEl.alt = item.alt;
+      gallery.appendChild(imgEl);
+    });
+  })
+  .catch(err => console.error('Error loading gallery JSON:', err));
+</script>
+
+
+
+
+
+
+
+
+
+
+  <!-- Script for parallax effect -->
+  <script>
+    const parallaxText = document.getElementById("parallaxText");
+    window.addEventListener("scroll", () => {
+      let scrollY = window.scrollY;
+      parallaxText.style.transform = `translateY(${scrollY * -0.5}px)`; // text moves twice as fast
+    });
+  </script>
+
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+
+
+<iframe frameborder="0" scrolling="no" style="background-color: transparent; border: 0px; display: none;"></iframe><div id="GOOGLE_INPUT_CHEXT_FLAG" input="" input_stat="{&quot;tlang&quot;:true,&quot;tsbc&quot;:true,&quot;pun&quot;:true,&quot;mk&quot;:true,&quot;ss&quot;:true}" style="display: none;"></div></body></html>
