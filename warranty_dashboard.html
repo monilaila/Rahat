@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warranty Dashboard</title>
+  <meta name="description" content="A modern warranty dashboard to add products, track expiry dates, and monitor remaining days with a visual progress bar." />
+  <meta name="keywords" content="warranty dashboard, warranty tracker, expiry date tracker, countdown progress bar, browser saved warranty" />
+  <meta name="theme-color" content="#6d5efc" />
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: rgba(255, 255, 255, 0.78);
+      --card-strong: #ffffff;
+      --text: #101828;
+      --muted: #667085;
+      --line: rgba(16, 24, 40, 0.08);
+      --accent: #6d5efc;
+      --accent-2: #19c37d;
+      --accent-3: #ffb020;
+      --danger: #ef4444;
+      --shadow: 0 24px 60px rgba(16, 24, 40, 0.10);
+      --radius: 24px;
+      --radius-sm: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(109, 94, 252, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(25, 195, 125, 0.16), transparent 28%),
+        linear-gradient(180deg, #f7f8fc 0%, #eef2f9 100%);
+      overflow-x: hidden;
+    }
+
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 18px 42px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .hero-card,
+    .panel,
+    .stat,
+    .product-card,
+    .tab-btn,
+    input,
+    select,
+    button {
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72));
+      border: 1px solid rgba(255,255,255,0.75);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -80px -90px auto;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(109,94,252,0.18), transparent 68%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(109, 94, 252, 0.10);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(16,24,40,0.06);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat .v {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.70));
+      border: 1px solid rgba(255,255,255,0.72);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+      margin-bottom: 18px;
+      padding: 6px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--line);
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), #8e7eff);
+      color: white;
+      box-shadow: 0 12px 24px rgba(109, 94, 252, 0.25);
+    }
+
+    .tab-btn:hover { transform: translateY(-1px); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .tab-panel {
+      display: none;
+      animation: fadeUp .24s ease both;
+    }
+
+    .tab-panel.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 13px;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid rgba(16,24,40,0.10);
+      background: rgba(255,255,255,0.90);
+      border-radius: 16px;
+      padding: 14px 14px;
+      outline: none;
+      font-size: 14px;
+      color: var(--text);
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: rgba(109, 94, 252, 0.65);
+      box-shadow: 0 0 0 4px rgba(109, 94, 252, 0.12);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 16px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn.primary {
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #8b7cff);
+      box-shadow: 0 12px 24px rgba(109, 94, 252, 0.24);
+    }
+
+    .btn.secondary {
+      color: var(--text);
+      background: rgba(255,255,255,0.90);
+      border: 1px solid var(--line);
+    }
+
+    .helper {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(109,94,252,0.10), rgba(25,195,125,0.08));
+      border: 1px solid rgba(109,94,252,0.12);
+      color: #344054;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .list-head h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.03em;
+    }
+
+    .count-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(109,94,252,0.10);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap input { padding-left: 44px; }
+
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #98a2b3;
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    .sort-wrap select { min-width: 170px; }
+
+    .cards {
+      display: grid;
+      gap: 14px;
+    }
+
+    .product-card {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(16,24,40,0.08);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(16,24,40,0.06);
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .product-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 36px rgba(16,24,40,0.08);
+    }
+
+    .row-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .title-block h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .title-block .meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status.active {
+      background: rgba(25,195,125,0.12);
+      color: #067647;
+    }
+
+    .status.expired {
+      background: rgba(239,68,68,0.12);
+      color: var(--danger);
+    }
+
+    .status.soon {
+      background: rgba(255,176,32,0.15);
+      color: #b45309;
+    }
+
+    .progress-wrap {
+      margin: 14px 0 12px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 12px;
+      background: rgba(16,24,40,0.06);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #8b7cff, var(--accent-2));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18);
+      transition: width .45s ease;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .metric {
+      background: rgba(244,246,251,0.9);
+      border: 1px solid rgba(16,24,40,0.06);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .metric .k {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .metric .v {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .tiny {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: white;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .tiny.danger { color: var(--danger); }
+
+    .empty {
+      background: rgba(255,255,255,0.84);
+      border: 1px dashed rgba(16,24,40,0.14);
+      border-radius: 22px;
+      padding: 26px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(16,24,40,0.60);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 40;
+    }
+
+    .modal.show { display: flex; }
+
+    .modal-card {
+      width: min(560px, 100%);
+      background: rgba(255,255,255,0.96);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      border: 1px solid rgba(255,255,255,0.7);
+    }
+
+    .modal-card h3 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .modal-card p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .overlay-steps {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: #f8faff;
+      border: 1px solid rgba(16,24,40,0.06);
+    }
+
+    .step .n {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(109,94,252,0.12);
+      color: var(--accent);
+      font-weight: 900;
+      flex: none;
+    }
+
+    .step .t {
+      font-size: 13px;
+      line-height: 1.55;
+      color: #344054;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 920px) {
+      .hero { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .shell { padding: 16px 12px 28px; }
+      .hero-card, .panel { padding: 18px; border-radius: 22px; }
+      .mini-grid, .form-grid, .metrics { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr; }
+      .tabs { flex-direction: column; }
+      .row-top { flex-direction: column; }
+      .card-actions, .actions { flex-direction: column; }
+      .btn, .tiny { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">Warranty tracker • saved in your browser</div>
+        <h1>Track every warranty with calm, clean clarity.</h1>
+        <p>
+          Add product details, optional due date, and custom warranty rules. Then follow the countdown in a visual dashboard with a progress bar, remaining days, and expiry date. Everything stays in this browser until you clear it.
+        </p>
+
+        <div class="mini-grid">
+          <div class="stat">
+            <div class="k">What it stores</div>
+            <div class="v">Products, dates, notes</div>
+          </div>
+          <div class="stat">
+            <div class="k">What it shows</div>
+            <div class="v">Days left, expiry, progress</div>
+          </div>
+          <div class="stat">
+            <div class="k">How it helps</div>
+            <div class="v">No more date math fog</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-side">
+        <div class="panel">
+          <div class="tabs">
+            <button class="tab-btn active" id="tabAddBtn" onclick="switchTab('add')">Add product</button>
+            <button class="tab-btn" id="tabTrackBtn" onclick="switchTab('track')">Countdown</button>
+          </div>
+
+          <div class="layout">
+            <div class="tab-panel active" id="addTab">
+              <div class="form-grid">
+                <div class="field full">
+                  <label for="productName">Product name</label>
+                  <input id="productName" type="text" placeholder="Example: SSD 1TB, GPU, motherboard" />
+                </div>
+                <div class="field">
+                  <label for="purchaseDate">Purchase date</label>
+                  <input id="purchaseDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="warrantyYears">Warranty years</label>
+                  <input id="warrantyYears" type="number" min="0" step="0.1" value="3" />
+                </div>
+                <div class="field">
+                  <label for="monthsPerYear">Months counted as 1 year</label>
+                  <input id="monthsPerYear" type="number" min="1" step="1" value="10" />
+                </div>
+                <div class="field">
+                  <label for="dueDate">Optional due date</label>
+                  <input id="dueDate" type="date" />
+                </div>
+                <div class="field full">
+                  <label for="note">Note</label>
+                  <input id="note" type="text" placeholder="Example: seller warranty, replacement policy, serial number" />
+                </div>
+              </div>
+
+              <div class="actions">
+                <button class="btn primary" onclick="addProduct()">Save product</button>
+                <button class="btn secondary" onclick="clearForm()">Clear form</button>
+              </div>
+
+              <div class="notice">
+                Tip: If your seller says <strong>10 months = 1 year</strong>, keep the rule at 10. The page uses that rule to calculate the warranty end date, then shows the real remaining days in the countdown tab.
+              </div>
+
+              <div class="helper">
+                This page saves data in <strong>localStorage</strong>, which means the list remains in the browser on this device unless it is cleared manually.
+              </div>
+            </div>
+
+            <div class="tab-panel" id="trackTab">
+              <div class="list-head">
+                <h2>Countdown dashboard</h2>
+                <div class="count-pill" id="countPill">0 products</div>
+              </div>
+
+              <div class="toolbar">
+                <div class="search-wrap">
+                  <span class="search-icon">⌕</span>
+                  <input id="searchInput" type="text" placeholder="Search product name or note" oninput="renderProducts()" />
+                </div>
+                <div class="sort-wrap">
+                  <select id="sortSelect" onchange="renderProducts()">
+                    <option value="soonest">Sort: ending soonest</option>
+                    <option value="latest">Sort: ending latest</option>
+                    <option value="name">Sort: name A to Z</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="cards" id="productList"></div>
+              <div class="footer-note">Your data stays local to this browser. It is not uploaded anywhere.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="tutorialModal">
+    <div class="modal-card">
+      <h3>Welcome, here is how to use this</h3>
+      <p>This page has two tabs. The first tab saves a product, and the second tab shows the countdown and progress bar.</p>
+      <div class="overlay-steps">
+        <div class="step"><div class="n">1</div><div class="t">Go to <strong>Add product</strong> and enter the product name, purchase date, warranty years, and the seller rule if needed.</div></div>
+        <div class="step"><div class="n">2</div><div class="t">Click <strong>Save product</strong>. The item will be stored in your browser.</div></div>
+        <div class="step"><div class="n">3</div><div class="t">Open <strong>Countdown</strong> to see the progress bar, days left, and expiry date for every saved product.</div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="dismissTutorial()">Not now</button>
+        <button class="btn primary" onclick="dismissTutorial()">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'warranty_dashboard_products_v1';
+    const TUTORIAL_KEY = 'warranty_dashboard_seen_tutorial_v1';
+    let products = loadProducts();
+
+    function nowLocalDateOnly() {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    function parseDateOnly(value) {
+      if (!value) return null;
+      const [y, m, d] = value.split('-').map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    }
+
+    function formatDate(date) {
+      return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+    }
+
+    function daysBetween(start, end) {
+      const ms = end.getTime() - start.getTime();
+      return Math.floor(ms / 86400000);
+    }
+
+    function addMonthsSafe(date, monthsToAdd) {
+      const d = new Date(date.getTime());
+      const day = d.getDate();
+      d.setMonth(d.getMonth() + monthsToAdd);
+      if (d.getDate() < day) {
+        d.setDate(0);
+      }
+      return d;
+    }
+
+    function computeWarranty(product) {
+      const purchase = parseDateOnly(product.purchaseDate);
+      if (!purchase) return null;
+      const years = Number(product.warrantyYears || 0);
+      const monthsPerYear = Number(product.monthsPerYear || 12);
+      const totalWarrantyMonths = Math.max(0, years * monthsPerYear);
+      const expiry = addMonthsSafe(purchase, totalWarrantyMonths);
+      const today = nowLocalDateOnly();
+      const usedDays = Math.max(0, daysBetween(purchase, today));
+      const totalDays = Math.max(1, daysBetween(purchase, expiry));
+      const daysLeft = daysBetween(today, expiry);
+      const progress = Math.min(100, Math.max(0, (usedDays / totalDays) * 100));
+      return { purchase, expiry, today, usedDays, totalDays, daysLeft, progress, totalWarrantyMonths };
+    }
+
+    function loadProducts() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveProducts() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+    }
+
+    function switchTab(tab) {
+      const addTab = document.getElementById('addTab');
+      const trackTab = document.getElementById('trackTab');
+      const tabAddBtn = document.getElementById('tabAddBtn');
+      const tabTrackBtn = document.getElementById('tabTrackBtn');
+      if (tab === 'add') {
+        addTab.classList.add('active');
+        trackTab.classList.remove('active');
+        tabAddBtn.classList.add('active');
+        tabTrackBtn.classList.remove('active');
+      } else {
+        addTab.classList.remove('active');
+        trackTab.classList.add('active');
+        tabAddBtn.classList.remove('active');
+        tabTrackBtn.classList.add('active');
+      }
+    }
+
+    function addProduct() {
+      const productName = document.getElementById('productName').value.trim();
+      const purchaseDate = document.getElementById('purchaseDate').value;
+      const warrantyYears = Number(document.getElementById('warrantyYears').value);
+      const monthsPerYear = Number(document.getElementById('monthsPerYear').value);
+      const dueDate = document.getElementById('dueDate').value;
+      const note = document.getElementById('note').value.trim();
+
+      if (!productName || !purchaseDate || !warrantyYears || !monthsPerYear) {
+        alert('Please fill product name, purchase date, warranty years, and months per year.');
+        return;
+      }
+
+      const product = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        productName,
+        purchaseDate,
+        warrantyYears,
+        monthsPerYear,
+        dueDate,
+        note,
+        createdAt: new Date().toISOString()
+      };
+
+      products.unshift(product);
+      saveProducts();
+      clearForm(false);
+      switchTab('track');
+      renderProducts();
+    }
+
+    function clearForm(resetMessages = true) {
+      document.getElementById('productName').value = '';
+      document.getElementById('purchaseDate').value = '';
+      document.getElementById('warrantyYears').value = '3';
+      document.getElementById('monthsPerYear').value = '10';
+      document.getElementById('dueDate').value = '';
+      document.getElementById('note').value = '';
+      if (resetMessages) {
+        document.getElementById('productName').focus();
+      }
+    }
+
+    function deleteProduct(id) {
+      products = products.filter(p => p.id !== id);
+      saveProducts();
+      renderProducts();
+    }
+
+    function clearAll() {
+      if (!confirm('Delete all saved warranty items from this browser?')) return;
+      products = [];
+      saveProducts();
+      renderProducts();
+    }
+
+    function statusClass(daysLeft) {
+      if (daysLeft < 0) return 'expired';
+      if (daysLeft <= 30) return 'soon';
+      return 'active';
+    }
+
+    function statusText(daysLeft) {
+      if (daysLeft < 0) return 'Expired';
+      if (daysLeft <= 30) return 'Ending soon';
+      return 'Active';
+    }
+
+    function renderProducts() {
+      const list = document.getElementById('productList');
+      const pill = document.getElementById('countPill');
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const sort = document.getElementById('sortSelect').value;
+
+      let filtered = products.filter(p => {
+        const hay = `${p.productName} ${p.note || ''}`.toLowerCase();
+        return hay.includes(search);
+      });
+
+      filtered = filtered.map(p => {
+        const calc = computeWarranty(p);
+        return { ...p, calc };
+      }).filter(p => p.calc);
+
+      filtered.sort((a, b) => {
+        if (sort === 'latest') return b.calc.expiry - a.calc.expiry;
+        if (sort === 'name') return a.productName.localeCompare(b.productName);
+        return a.calc.expiry - b.calc.expiry;
+      });
+
+      pill.textContent = `${filtered.length} product${filtered.length === 1 ? '' : 's'}`;
+
+      if (!filtered.length) {
+        list.innerHTML = `
+          <div class="empty">
+            No saved products yet. Switch to <strong>Add product</strong> and save one.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = filtered.map(item => {
+        const { calc } = item;
+        const progressWidth = calc.progress.toFixed(1);
+        const remainingText = calc.daysLeft < 0 ? '0 days left' : `${calc.daysLeft} day${calc.daysLeft === 1 ? '' : 's'} left`;
+        const dueText = item.dueDate ? formatDate(parseDateOnly(item.dueDate)) : 'No due date';
+        return `
+          <article class="product-card">
+            <div class="row-top">
+              <div class="title-block">
+                <h3>${escapeHtml(item.productName)}</h3>
+                <div class="meta">Purchased: ${formatDate(calc.purchase)} · Expires: ${formatDate(calc.expiry)}</div>
+                <div class="meta">${item.note ? escapeHtml(item.note) : 'No note added'}</div>
+              </div>
+              <div class="status ${statusClass(calc.daysLeft)}">${statusText(calc.daysLeft)}</div>
+            </div>
+
+            <div class="progress-wrap">
+              <div class="progress-label">
+                <span>Warranty progress</span>
+                <span>${progressWidth}% used</span>
+              </div>
+              <div class="progress-bar" aria-label="Warranty progress">
+                <div class="progress-fill" style="width:${progressWidth}%"></div>
+              </div>
+            </div>
+
+            <div class="metrics">
+              <div class="metric"><div class="k">Days left</div><div class="v">${calc.daysLeft < 0 ? 0 : calc.daysLeft}</div></div>
+              <div class="metric"><div class="k">Expiry date</div><div class="v">${formatDate(calc.expiry)}</div></div>
+              <div class="metric"><div class="k">Due date</div><div class="v">${escapeHtml(dueText)}</div></div>
+            </div>
+
+            <div class="card-actions">
+              <button class="tiny" onclick="copySummary('${item.id}')">Copy summary</button>
+              <button class="tiny danger" onclick="deleteProduct('${item.id}')">Delete</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    async function copySummary(id) {
+      const item = products.find(p => p.id === id);
+      if (!item) return;
+      const calc = computeWarranty(item);
+      const text = [
+        `Product: ${item.productName}`,
+        `Purchased: ${formatDate(calc.purchase)}`,
+        `Expiry: ${formatDate(calc.expiry)}`,
+        `Days left: ${Math.max(0, calc.daysLeft)}`,
+        item.note ? `Note: ${item.note}` : ''
+      ].filter(Boolean).join('\n');
+
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('Summary copied to clipboard.');
+      } catch (e) {
+        alert(text);
+      }
+    }
+
+    function dismissTutorial() {
+      document.getElementById('tutorialModal').classList.remove('show');
+      localStorage.setItem(TUTORIAL_KEY, '1');
+    }
+
+    function maybeShowTutorial() {
+      if (!localStorage.getItem(TUTORIAL_KEY)) {
+        document.getElementById('tutorialModal').classList.add('show');
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') dismissTutorial();
+    });
+
+    // Init
+    renderProducts();
+    maybeShowTutorial();
+  </script>
+</body>
+</html>
