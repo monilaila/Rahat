@@ -3,6 +3,7 @@
   "short_name": "Warranty",
   "description": "Calculate warranty expiry dates instantly.",
   "start_url": "/",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#111318",
   "theme_color": "#1a1f2e",
