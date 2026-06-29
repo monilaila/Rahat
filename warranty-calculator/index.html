@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Calculate warranty expiry dates instantly." />
+  <meta name="theme-color" content="#1a1f2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Warranty" />
+
+  <title>Warranty Calculator</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <main class="app">
+
+    <header class="app-header">
+      <h1 class="app-title">Warranty Calculator</h1>
+    </header>
+
+    <section class="form-section">
+
+      <!-- Purchase Date -->
+      <div class="field">
+        <label class="field-label" for="purchase-date">Purchase Date</label>
+        <div class="date-wrapper">
+          <!-- Text input: keyboard entry, auto-formats to DD/MM/YYYY -->
+          <input
+            class="field-input date-text-input"
+            type="text"
+            id="purchase-date"
+            placeholder="DD / MM / YYYY"
+            inputmode="numeric"
+            maxlength="10"
+            autocomplete="off"
+          />
+          <!-- Hidden native date picker — opened only by the calendar icon -->
+          <input
+            class="date-native-hidden"
+            type="date"
+            id="purchase-date-native"
+            tabindex="-1"
+            aria-hidden="true"
+          />
+          <button class="btn-calendar" id="btn-calendar" type="button" aria-label="Open date picker">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Warranty Duration -->
+      <div class="field">
+        <label class="field-label" for="warranty-months">Warranty (Months)</label>
+        <input
+          class="field-input field-input--months"
+          type="number"
+          id="warranty-months"
+          min="1"
+          max="600"
+          placeholder="Enter months"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Quick Buttons -->
+      <div class="quick-section">
+        <div class="quick-label">Quick Select</div>
+        <div class="quick-buttons" id="quick-buttons" role="group" aria-label="Quick warranty duration buttons">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Calculate -->
+      <button class="btn-calculate" id="btn-calculate" type="button">
+        Calculate
+      </button>
+
+    </section>
+
+    <!-- Result -->
+    <section class="result" id="result" aria-live="polite" hidden>
+      <div class="result-row" id="result-expiry">
+        <div class="result-label" id="result-expiry-label">Warranty Expires</div>
+        <div class="result-value" id="result-expiry-value">—</div>
+      </div>
+      <div class="result-divider"></div>
+      <div class="result-row">
+        <div class="result-label" id="result-days-label">Days Remaining</div>
+        <div class="result-value result-value--days" id="result-days-value">—</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add custom button dialog -->
+  <div class="dialog-overlay" id="dialog-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="dialog-title">
+    <div class="dialog">
+      <h2 class="dialog-title" id="dialog-title">Add Custom Duration</h2>
+      <p class="dialog-desc">Enter the warranty length in months.</p>
+      <input
+        class="field-input"
+        type="number"
+        id="dialog-input"
+        min="1"
+        max="600"
+        placeholder="e.g. 48"
+        autocomplete="off"
+      />
+      <div class="dialog-actions">
+        <button class="btn-secondary" id="dialog-cancel" type="button">Cancel</button>
+        <button class="btn-primary" id="dialog-confirm" type="button">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
