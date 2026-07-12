@@ -2,7 +2,7 @@
   "name": "Warranty Calculator",
   "short_name": "Warranty",
   "description": "Calculate warranty expiry dates instantly.",
-  "start_url": "/Rahat/warranty-calculator/",
+  "start_url": "https://monilaila.github.io/Rahat/warranty-calculator/",
   "scope": "./",
   "display": "standalone",
   "background_color": "#111318",
