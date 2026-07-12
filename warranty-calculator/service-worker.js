@@ -1,4 +1,4 @@
-const CACHE = "warranty-v2";
+const CACHE = "warranty-v3";
 
 const FILES = [
   "./",
