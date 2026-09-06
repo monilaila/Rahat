@@ -99,7 +99,7 @@ function loadLinks(){
     card.className = 'card';
     card.innerHTML = `
       <div class="player">
-        ${id ? `<iframe src="https://www.youtube.com/embed/${id}" referrerpolicy="no-referrer" allow="autoplay; encrypted-media" allowfullscreen></iframe>` : `<div class="empty">Invalid link</div>`}
+        ${id ? `<iframe src="https://www.youtube.com/embed/${id}" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen></iframe>` : `<div class="empty">Invalid link</div>`}
       </div>
       <div class="meta">
         <div class="title">${link}</div>
@@ -128,24 +128,60 @@ const floatHead = document.getElementById('floatHead');
 let dragging = false, offX = 0, offY = 0;
 function openFloat(id){
   if(!id) return;
-  floatBody.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" referrerpolicy="no-referrer" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+  floatBody.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
   floatWrap.style.left = (window.innerWidth - 520) + 'px';
   floatWrap.style.top = '90px';
   floatWrap.classList.add('show');
 }
 function closeFloat(){ floatWrap.classList.remove('show'); floatBody.innerHTML = ''; }
-floatHead.addEventListener('mousedown', e => {
+function clampPos(left, top){
+  const rect = floatWrap.getBoundingClientRect();
+  const maxLeft = window.innerWidth - rect.width;
+  const maxTop = window.innerHeight - rect.height;
+  return {
+    left: Math.min(Math.max(left, 0), Math.max(maxLeft, 0)),
+    top: Math.min(Math.max(top, 0), Math.max(maxTop, 0))
+  };
+}
+
+function startDrag(e){
   dragging = true;
   const rect = floatWrap.getBoundingClientRect();
   offX = e.clientX - rect.left;
   offY = e.clientY - rect.top;
-});
-document.addEventListener('mousemove', e => {
+  // prevent the iframe from swallowing mousemove/mouseup while dragging
+  const iframe = floatBody.querySelector('iframe');
+  if(iframe) iframe.style.pointerEvents = 'none';
+  floatHead.setPointerCapture && floatHead.setPointerCapture(e.pointerId);
+  e.preventDefault();
+}
+
+function moveDrag(e){
   if(!dragging) return;
-  floatWrap.style.left = (e.clientX - offX) + 'px';
-  floatWrap.style.top = (e.clientY - offY) + 'px';
+  const pos = clampPos(e.clientX - offX, e.clientY - offY);
+  floatWrap.style.left = pos.left + 'px';
+  floatWrap.style.top = pos.top + 'px';
+}
+
+function endDrag(){
+  if(!dragging) return;
+  dragging = false;
+  const iframe = floatBody.querySelector('iframe');
+  if(iframe) iframe.style.pointerEvents = 'auto';
+}
+
+floatHead.addEventListener('pointerdown', startDrag);
+window.addEventListener('pointermove', moveDrag);
+window.addEventListener('pointerup', endDrag);
+window.addEventListener('pointercancel', endDrag);
+window.addEventListener('blur', endDrag);
+window.addEventListener('resize', () => {
+  if(!floatWrap.classList.contains('show')) return;
+  const rect = floatWrap.getBoundingClientRect();
+  const pos = clampPos(rect.left, rect.top);
+  floatWrap.style.left = pos.left + 'px';
+  floatWrap.style.top = pos.top + 'px';
 });
-document.addEventListener('mouseup', () => dragging = false);
 </script>
 </body>
 </html>
