@@ -199,7 +199,7 @@ body.split-on .ep{max-width:none;}
 input[type=color]{width:32px;height:32px;padding:1px;border-radius:5px;border:1px solid var(--bdr2);background:var(--bg2);cursor:pointer;}
 
 /* SECTION DIVIDER in editor */
-.adv-box{margin:1.2rem 0 0;border:1px solid var(--bdr2);border-radius:10px;background:var(--bg2);padding:0 14px 6px}.adv-box>summary{cursor:pointer;list-style:none;padding:12px 0;font-size:12px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:8px}.adv-box>summary::-webkit-details-marker{display:none}.adv-box>summary:before{content:'\25B8';color:var(--acc);transition:transform .15s}.adv-box[open]>summary:before{transform:rotate(90deg)}.adv-box>summary small{font-weight:400;color:var(--txt3);font-size:11px}.ep-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);padding:.5rem 0;border-bottom:1px solid var(--bdr);margin-bottom:1rem;}
+.sbg-pulse{box-shadow:0 0 0 0 rgba(212,168,83,.6);animation:sbgpulse 1.8s infinite}@keyframes sbgpulse{70%{box-shadow:0 0 0 9px rgba(212,168,83,0)}100%{box-shadow:0 0 0 0 rgba(212,168,83,0)}}.adv-box{margin:1.2rem 0 0;border:1px solid var(--bdr2);border-radius:10px;background:var(--bg2);padding:0 14px 6px}.adv-box>summary{cursor:pointer;list-style:none;padding:12px 0;font-size:12px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:8px}.adv-box>summary::-webkit-details-marker{display:none}.adv-box>summary:before{content:'\25B8';color:var(--acc);transition:transform .15s}.adv-box[open]>summary:before{transform:rotate(90deg)}.adv-box>summary small{font-weight:400;color:var(--txt3);font-size:11px}.ep-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);padding:.5rem 0;border-bottom:1px solid var(--bdr);margin-bottom:1rem;}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
@@ -2871,25 +2871,10 @@ function biDragEnd(e) {
 // ═══════════════════════════════════════════
 // RENDER EDITOR
 // ═══════════════════════════════════════════
-function sbPinHTML(b) {
-  const bad = sbgCidAudit();
-  let h = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn btn-acc" onclick="sbgShowScript(\'' + b.id + '\')">Show script</button><span style="font-size:11px;color:var(--txt3)">Copy it into Apps Script after changing prices, products or fields.</span></div>';
-  if(bad.length) h += '<div style="margin-top:8px;padding:8px 10px;border:1px solid #f97316;border-radius:8px;background:rgba(249,115,22,.12);font-size:12px;line-height:1.6"><b>' + bad.length + ' block' + (bad.length === 1 ? ' uses' : 's use') + ' a different Google Client ID than the project.</b> This causes the Google error "origin_mismatch". <button class="btn" style="margin-left:6px" onclick="sbgCidFixNow()">Use the project ID everywhere</button></div>';
-  return h;
-}
-function sbPinBar(b) {
-  if(!['shopblock','reviewblock','formblock'].includes(b.type)) return;
-  const head = document.querySelector('#rpanel .ep-head'); if(!head) return;
-  const old = document.getElementById('sb-pinbar'); if(old) old.remove();
-  const d = document.createElement('div'); d.id = 'sb-pinbar'; d.dataset.bid = b.id; d.style.cssText = 'margin:-6px 0 14px';
-  d.innerHTML = sbPinHTML(b);
-  head.insertAdjacentElement('afterend', d);
-}
-function sbgPinRefresh() { const d = document.getElementById('sb-pinbar'); if(!d) return; const b = S.blocks.find(x => x.id === d.dataset.bid); if(b) d.innerHTML = sbPinHTML(b); }
 var SB_ADV = {
-  reviewblock: /^(Which reviews|Google connection|Rules|Style|Words)/i,
-  shopblock: /^(Customer fields|Google connection|Seller dashboard|Shop checklist)/i,
-  formblock: /^(Google Sheets Connection|Duplicate Submission|Submission Limit)/i
+  reviewblock: /^(Which reviews|Rules|Style|Words)/i,
+  shopblock: /^(Customer fields|Seller dashboard|Shop checklist)/i,
+  formblock: /^(Duplicate Submission|Submission Limit)/i
 };
 var _sbAdv = {};
 function sbGroupAdvanced(b){
@@ -2927,12 +2912,11 @@ function renderEditor() {
     ${renderBlockForm(b)}
   </div>`;
   sbGroupAdvanced(b);
-  sbPinBar(b);
   // Restore collapse states after re-render
   restoreCollapseState();
   // If this is a form block, immediately check for duplicate labels
   if(b.type === 'formblock') fbCheckDuplicateLabels(b.id);
-  if(b.type === 'formblock' || b.type === 'reviewblock') { try { sbgRefreshPanels(); } catch(e) {} }
+  if(b.type === 'formblock' || b.type === 'reviewblock' || b.type === 'shopblock') { try { sbgRefreshPanels(); } catch(e) {} }
   // If this is a navbar block, immediately check for duplicate URLs
   if(b.type === 'navbar') nbCheckDupUrl(b.id);
   // Custom block: load CodeMirror (scripts in innerHTML don't execute, so trigger here)
@@ -4649,7 +4633,7 @@ function sbgMiniToast(msg) {
 function sbgSet(key, val) {
   const g = sbgG();
   g[key] = String(val).trim();
-  if(key === 'clientId') { clearTimeout(sbgSet._c); sbgSet._c = setTimeout(() => { const n = sbgCidClear(); if(n) sbgMiniToast('Client ID applied everywhere (' + n + ' block override' + (n === 1 ? '' : 's') + ' removed).'); sbgPinRefresh(); }, 900); }
+  if(key === 'clientId') { clearTimeout(sbgSet._c); sbgSet._c = setTimeout(() => { const n = sbgCidClear(); if(n) sbgMiniToast('Client ID applied everywhere (' + n + ' block override' + (n === 1 ? '' : 's') + ' removed).'); sbgRefreshPanels(); }, 900); }
   fldrMarkUnsaved && fldrMarkUnsaved(); ghMarkDirty && ghMarkDirty();
   clearTimeout(sbgSet._t); sbgSet._t = setTimeout(() => { sbPushHistory(); schedulePreview(); }, 700);
   sbgRefreshPanels();
@@ -4815,6 +4799,7 @@ function sbgPanelHTML(id, kind) {
     </div>`).join('');
   return `
   <div class="sbg-panel" data-sbg-panel="${id}" data-sbg-kind="${kind}">
+    <div data-sbg-cidwarn></div>
     <div class="fg"><label class="fg-label">Google Client ID (whole project)</label>
       <input class="fi" value="${eH(g.clientId)}" placeholder="123456-abc.apps.googleusercontent.com" oninput="sbgSet('clientId',this.value)">
       <div class="fg-hint" data-sbg-msg="client"></div></div>
@@ -4828,7 +4813,7 @@ function sbgPanelHTML(id, kind) {
       </div></details>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn" onclick="sbgTest('${id}')">Test connection</button>
-      <button class="btn" onclick="sbgShowScript('${id}')">Show script</button>
+      <button class="btn" data-sbg-show onclick="sbgShowScript('${id}')">Show script</button>
     </div>
     <div data-sbg-test style="font-size:12px;line-height:1.6;margin-bottom:10px"></div>
     <div data-sbg-collide></div>
@@ -4836,6 +4821,13 @@ function sbgPanelHTML(id, kind) {
   </div>`;
 }
 // Updates the dynamic bits of every visible panel without re-rendering (keeps typing focus).
+function sbgScriptKey(url) { return String(url || 'default'); }
+function sbgScriptHash(url) { try { return sbgHash(JSON.stringify(sbgBuildConfig(url))); } catch(e) { return ''; } }
+function sbgScriptStale(url) {
+  const h = sbgScriptHash(url); if(!h) return false;
+  const seen = sbgG().scriptSeen || {};
+  return seen[sbgScriptKey(url)] !== h;
+}
 function sbgRefreshPanels() {
   document.querySelectorAll('[data-sbg-panel]').forEach(p => {
     const id = p.getAttribute('data-sbg-panel');
@@ -4843,6 +4835,10 @@ function sbgRefreshPanels() {
     const eff = sbgEff(b.data);
     const g = sbgG();
     const q = s => p.querySelector(s);
+    const sh = q('[data-sbg-show]');
+    if(sh) { const stale = sbgScriptStale(eff.scriptUrl); sh.classList.toggle('btn-acc', stale); sh.classList.toggle('sbg-pulse', stale); sh.textContent = stale ? 'Show script (needs updating)' : 'Show script'; sh.title = stale ? 'Your settings changed since you last copied the script. Open it and paste it into Apps Script again.' : ''; }
+    const cw = q('[data-sbg-cidwarn]');
+    if(cw) { const bad = sbgCidAudit(); cw.innerHTML = bad.length ? '<div style="margin-bottom:10px;padding:8px 10px;border:1px solid #f97316;border-radius:8px;background:rgba(249,115,22,.12);font-size:12px;line-height:1.6"><b>' + bad.length + ' block' + (bad.length === 1 ? ' uses' : 's use') + ' a different Client ID than the project.</b> This causes the Google error "origin_mismatch". <button class="btn" style="margin-left:6px" onclick="sbgCidFixNow()">Use the project ID everywhere</button></div>' : ''; }
     const cm = q('[data-sbg-msg="client"]');
     if(cm) { cm.textContent = !g.clientId ? 'Ends with .apps.googleusercontent.com' : (sbgValidClient(g.clientId) ? 'Looks right.' : 'This does not look like a Client ID. It must end with .apps.googleusercontent.com'); cm.style.color = (!g.clientId||sbgValidClient(g.clientId)) ? '' : '#e05c5c'; }
     const um = q('[data-sbg-msg="url"]');
@@ -4866,6 +4862,7 @@ function sbgRefreshPanels() {
 function sbgShowScript(id) {
   const b = S.blocks.find(x => x.id === id);
   const eff = sbgEff(b ? b.data : null);
+  try { const g = sbgG(); if(!g.scriptSeen || typeof g.scriptSeen !== 'object') g.scriptSeen = {}; g.scriptSeen[sbgScriptKey(eff.scriptUrl)] = sbgScriptHash(eff.scriptUrl); fldrMarkUnsaved && fldrMarkUnsaved(); ghMarkDirty && ghMarkDirty(); setTimeout(sbgRefreshPanels, 0); } catch(e) {}
   const gi = sbgGenerateScript(eff.scriptUrl);
   if(b && b.type === 'shopblock') { b.data.scriptSeen = shHash(b.data); setTimeout(() => shRefresh(b.id), 0); }
   const groups = new Set(sbgAllBlocks().map(x => sbgEff(x.data).scriptUrl));
