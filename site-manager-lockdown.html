@@ -199,7 +199,7 @@ body.split-on .ep{max-width:none;}
 input[type=color]{width:32px;height:32px;padding:1px;border-radius:5px;border:1px solid var(--bdr2);background:var(--bg2);cursor:pointer;}
 
 /* SECTION DIVIDER in editor */
-.ep-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);padding:.5rem 0;border-bottom:1px solid var(--bdr);margin-bottom:1rem;}
+.adv-box{margin:1.2rem 0 0;border:1px solid var(--bdr2);border-radius:10px;background:var(--bg2);padding:0 14px 6px}.adv-box>summary{cursor:pointer;list-style:none;padding:12px 0;font-size:12px;font-weight:600;color:var(--txt);display:flex;align-items:center;gap:8px}.adv-box>summary::-webkit-details-marker{display:none}.adv-box>summary:before{content:'\25B8';color:var(--acc);transition:transform .15s}.adv-box[open]>summary:before{transform:rotate(90deg)}.adv-box>summary small{font-weight:400;color:var(--txt3);font-size:11px}.ep-section{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);padding:.5rem 0;border-bottom:1px solid var(--bdr);margin-bottom:1rem;}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
@@ -413,6 +413,10 @@ button.btn.tn-sm{padding:4px 11px;font-size:11px;}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Sync to GitHub
       </button>
+      <button id="gh-force-menu-item" onclick="ghSyncProject(true);toggleExportMenu()" title="Sends a fresh commit even when no file changed, which makes GitHub Pages publish again. Use it if the live site looks old." style="display:none;width:100%;padding:9px 14px;background:none;border:none;color:var(--txt);font-size:12px;font-weight:500;cursor:pointer;text-align:left;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+        Force republish
+      </button>
       <button id="cleanup-menu-item" onclick="sbCleanupUnused();toggleExportMenu()" title="Remove images and custom code files nothing uses — from the project, the connected folder, and (on your next sync) GitHub" style="width:100%;padding:9px 14px;background:none;border:none;border-top:1px solid var(--bdr);color:var(--txt);font-size:12px;font-weight:500;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
         <span data-cleanup-label>Clean Up Unused Files</span>
@@ -423,7 +427,7 @@ button.btn.tn-sm{padding:4px 11px;font-size:11px;}
   <!-- Ask AI -->
   <button class="tn-ai-btn" onclick="openAIModal()" id="ai-gen-btn" style="display:flex;align-items:center;gap:5px">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-    Ask AI
+    AI Guide
   </button>
 </div>
 <!-- absolute-right order guaranteed by DOM order above: ... Export, Ask AI (rightmost) -->
@@ -478,14 +482,14 @@ button.btn.tn-sm{padding:4px 11px;font-size:11px;}
 <div class="modal-overlay hidden" id="ai-modal" onclick="if(event.target===this)closeAIModal()">
   <div class="modal" style="max-width:620px">
     <div class="modal-hd">
-      <span class="modal-title">Ask AI about Site Builder</span>
+      <span class="modal-title">AI Guide</span>
       <button class="modal-x" onclick="closeAIModal()">×</button>
     </div>
     <div class="modal-body">
       <div class="ai-modal-steps">
-        <div class="ai-modal-step"><div class="ai-modal-step-num">1</div><div class="ai-modal-step-txt">Click <strong style="color:var(--txt)">Copy Guide</strong> to copy the full feature guide</div></div>
+        <div class="ai-modal-step"><div class="ai-modal-step-num">1</div><div class="ai-modal-step-txt">Click <strong style="color:var(--txt)">Copy Guide</strong> to copy the guide for your version of the app</div></div>
         <div class="ai-modal-step"><div class="ai-modal-step-num">2</div><div class="ai-modal-step-txt">Open <strong style="color:var(--txt)">Claude</strong> or <strong style="color:var(--txt)">ChatGPT</strong> using the buttons below</div></div>
-        <div class="ai-modal-step"><div class="ai-modal-step-num">3</div><div class="ai-modal-step-txt">Paste the guide, then ask your question about any feature</div></div>
+        <div class="ai-modal-step"><div class="ai-modal-step-num">3</div><div class="ai-modal-step-txt">Paste the guide, then tell the AI what you are trying to do or what went wrong</div></div>
       </div>
       <textarea class="ai-modal-guide" id="ai-guide-text" readonly></textarea>
       <div class="ai-modal-btns">
@@ -1528,6 +1532,7 @@ function ghUpdateStatus() {
   const menuItem = document.getElementById('gh-sync-menu-item');
   if(btn) btn.style.display = connected ? 'flex' : 'none';
   if(menuItem) menuItem.style.display = connected ? 'flex' : 'none';
+  const forceItem = document.getElementById('gh-force-menu-item'); if(forceItem) forceItem.style.display = connected ? 'flex' : 'none';
   if(!connected) return;
   const dot = document.getElementById('gh-status-dot');
   let color = 'var(--txt3)', label = 'Not synced yet';
@@ -1707,7 +1712,7 @@ async function ghDoImport(cfg) {
 // and "bad token" apart. Throws only for genuine network/other failures.
 async function ghContentsGet(owner, repo, path, branch, token) {
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(branch)}`;
-  const resp = await fetch(url, { headers: { 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' } });
+  const resp = await fetch(url, { cache: 'no-store', headers: { 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' } });
   if(resp.status === 401 || resp.status === 403) return 'auth';
   if(resp.status === 404) return null;
   if(!resp.ok) throw new Error('HTTP '+resp.status);
@@ -1828,10 +1833,30 @@ function ghSetSpinning(on) {
   const icon = document.getElementById('gh-status-icon');
   if(icon) icon.classList.toggle('gh-spinning', !!on);
 }
-async function ghSyncProject() {
+async function ghPagesStatus(gh) {
+  try {
+    const r = await fetch('https://api.github.com/repos/'+gh.owner+'/'+gh.repo+'/pages/builds/latest', { cache: 'no-store', headers: { 'Authorization':'Bearer '+gh.token, 'Accept':'application/vnd.github+json' } });
+    if(!r.ok) return '';
+    const j = await r.json(); return String(j.status || '');
+  } catch(e) { return ''; }
+}
+function ghPagesMsg(s) {
+  if(s === 'built') return '\nLive site: GitHub Pages finished publishing. If you still see the old version, reload with Ctrl+Shift+R.';
+  if(s === 'building' || s === 'queued') return '\nLive site: GitHub Pages is still publishing. Give it a minute, then reload with Ctrl+Shift+R.';
+  if(s === 'errored') return '\nLive site: GitHub Pages reported an error building the site. Open your repository on GitHub, then Settings > Pages (or the Actions tab) to see why. Use Force republish after fixing it.';
+  return '';
+}
+async function ghSyncProject(force) {
+  force = force === true;
   if(_ghSyncInProgress) return; // ignore a second click while one's already in flight
   const gh = S.meta.github;
   if(!gh || !gh.token) { ghOpenConnectModal(); return; }
+  try { sbSyncActivePage(); } catch(e) {}
+  const _badCid = sbgCidAudit();
+  if(_badCid.length) {
+    const lbl = _badCid.slice(0, 4).map(b => ((DEFS[b.type] || {}).label || b.type)).join(', ');
+    if(confirm(_badCid.length + ' block' + (_badCid.length === 1 ? ' has' : 's have') + ' their own Google Client ID that is different from the project one (' + lbl + (_badCid.length > 4 ? ', ...' : '') + ').\n\nThis is the usual cause of the Google error "origin_mismatch" on the live site.\n\nPress OK to make every block use the project Client ID (recommended), or Cancel to publish as it is.')) sbgCidFixNow();
+  }
   _ghSyncInProgress = true;
   ghSetSpinning(true);
   sbSyncActivePage();
@@ -1845,6 +1870,7 @@ async function ghSyncProject() {
     Object.assign(files, customProj.textFiles);
     for(const relPath in customProj.binaryDataUris) files[relPath] = await fldrDataUriToBytes(customProj.binaryDataUris[relPath]);
     files['README.txt'] = FLDR_README_TXT;
+    if(force) files['site-build.txt'] = 'Republished by Site Builder at ' + new Date().toISOString() + '\n';
   } catch(e) {
     _ghSyncInProgress = false; ghSetSpinning(false);
     alert('Could not build the site to sync: '+e.message);
@@ -1887,8 +1913,11 @@ async function ghSyncProject() {
     gh.lastSyncStatus = 'synced';
     sbPersistCurrent(); // quiet bookkeeping save — not schedulePushHistory(), which would immediately re-flag dirty via ghMarkDirty()
     ghUpdateStatus();
-    if(ok === 0) alert('Already up to date with '+owner+'/'+repo+'.'+pruneMsg);
-    else alert('Synced '+ok+' file'+(ok===1?'':'s')+(skipped?' ('+skipped+' unchanged, skipped)':'')+' to '+owner+'/'+repo+'.'+pruneMsg);
+    const _cid = String(sbgG().clientId || '').trim(); const _cidTxt = _cid ? '\nGoogle Client ID on this site: ' + _cid.slice(0, 12) + '...' + _cid.replace('.apps.googleusercontent.com', '').slice(-6) + '.apps.googleusercontent.com' : '';
+    let pg = '';
+    if(ok > 0) { await new Promise(r => setTimeout(r, 3500)); pg = ghPagesMsg(await ghPagesStatus(gh)); }
+    if(ok === 0) alert('Already up to date with '+owner+'/'+repo+'. Every file on GitHub is identical to this project, so nothing was sent.\nIf the live site still shows an old version, choose Force republish in the Export menu.'+pruneMsg);
+    else alert((force ? 'Republished. ' : '')+'Synced '+ok+' file'+(ok===1?'':'s')+(skipped?' ('+skipped+' unchanged, skipped)':'')+' to '+owner+'/'+repo+'.'+pruneMsg+pg+_cidTxt);
   } else {
     gh.lastSyncStatus = 'error';
     sbPersistCurrent();
@@ -2667,7 +2696,7 @@ const DEFAULT_DATA = {
     products:[{ id:'p_demo01', title:'Sample product', image:'', badge:'', desc:'', price:0, allowQty:false, available:true, rules:'', label:'New', details:'Delivered within minutes\nWorks on all servers', oldPrice:0, packages:[{ id:'k_demo01', label:'Small', price:22, old:30 },{ id:'k_demo02', label:'Large', price:44, old:0 }] }],
     fields:[{ id:'f_demo01', label:'Player ID', type:'text', required:true, ph:'', options:'' }],
     texts:{"choose": "1. Choose package", "info": "2. Account info", "confirm": "3. Confirm", "wa": "WhatsApp number", "total": "Total", "order": "Place order", "rules": "Rules and Conditions", "recent": "Recent Orders", "done": "Order placed!", "check": "Check order status"} },
-  reviewblock: { title:'What people say', subtitle:'Sign in with Google to leave your own review.', clientId:'', scriptUrl:'', tab:'', ratingOn:true, maxRating:5, requireRating:true, minLen:10, maxLen:1000, pageSize:10, allowEdit:true, maxPerEmail:1, cooldownSec:30, confirmSeconds:5, moderation:'auto', onlyGmail:false, allowedDomain:'', showAverage:true, showBreakdown:true, showAvatar:true, showAge:true, showRefresh:true, starColor:'', cardBg:'', radius:'soft', spacing:'normal', align:'left', texts:{ signInPrompt:'Sign in with Google to write a review', writeTitle:'Write a review', namePlaceholder:'Your name', messagePlaceholder:'Share your experience…', submit:'Review and send', yourReview:'Your review', edit:'Edit your review', confirmTitle:'Send this review?', confirmWarning:"Once you send this, it is public and you cannot take it back. Please read it again and check it carefully.", confirmSend:'Send review', cancel:'Cancel', success:'Thank you! Your review has been posted.', emptyTitle:'No reviews yet', emptyText:'Be the first to share your experience.', privacy:'We use Google Sign-In to verify your email. Your email is saved with your review and is never shown on the page.', privacyLinkText:'Privacy policy', privacyLinkUrl:'' } },
+  reviewblock: { title:'What people say', subtitle:'Sign in with Google to leave your own review.', clientId:'', scriptUrl:'', tab:'', ratingOn:true, maxRating:5, requireRating:true, minLen:10, maxLen:1000, pageSize:10, allowEdit:true, maxPerEmail:2, cooldownSec:30, confirmSeconds:5, moderation:'auto', onlyGmail:false, allowedDomain:'', showAverage:true, showBreakdown:true, showAvatar:true, showAge:true, showRefresh:true, starColor:'', cardBg:'', radius:'soft', spacing:'normal', align:'left', texts:{ signInPrompt:'Sign in with Google to write a review', writeTitle:'Write a review', namePlaceholder:'Your name', messagePlaceholder:'Share your experience…', submit:'Review and send', yourReview:'Your review', edit:'Edit your review', confirmTitle:'Send this review?', confirmWarning:"Once you send this, it is public and you cannot take it back. Please read it again and check it carefully.", confirmSend:'Send review', cancel:'Cancel', success:'Thank you! Your review has been posted.', emptyTitle:'No reviews yet', emptyText:'Be the first to share your experience.', privacy:'We use Google Sign-In to verify your email. Your email is saved with your review and is never shown on the page.', privacyLinkText:'Privacy policy', privacyLinkUrl:'' } },
   theme: { primaryColor:'#d4a853', secondaryColor:'#5b8fd4', accentColor:'#4fa87a', bodyFont:'DM Sans', headingFont:'Playfair Display', customFontName:'', customFontUrl:'', siteName:'', siteUrl:'', logoImg:'', pageName:'', pageLinks:[], showScrollBar:true, loadingScreen:false, loadingScreenText:'' },
   navbar: { siteName:'', logoType:'text', logoSvg:'', logoPng:'', pageName:'', pageLinks:[], showScrollBar:true },
   footer: { quote:'', quoteAuthor:'', links:'About,#|Archive,#|Privacy,#|RSS,#', col1Title:'', col1Text:'', col2Title:'', col2Text:'', showSocial:true, socialLinks:'https://twitter.com/,https://instagram.com/,https://facebook.com/', copyrightText:'' },
@@ -2842,6 +2871,45 @@ function biDragEnd(e) {
 // ═══════════════════════════════════════════
 // RENDER EDITOR
 // ═══════════════════════════════════════════
+function sbPinHTML(b) {
+  const bad = sbgCidAudit();
+  let h = '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn btn-acc" onclick="sbgShowScript(\'' + b.id + '\')">Show script</button><span style="font-size:11px;color:var(--txt3)">Copy it into Apps Script after changing prices, products or fields.</span></div>';
+  if(bad.length) h += '<div style="margin-top:8px;padding:8px 10px;border:1px solid #f97316;border-radius:8px;background:rgba(249,115,22,.12);font-size:12px;line-height:1.6"><b>' + bad.length + ' block' + (bad.length === 1 ? ' uses' : 's use') + ' a different Google Client ID than the project.</b> This causes the Google error "origin_mismatch". <button class="btn" style="margin-left:6px" onclick="sbgCidFixNow()">Use the project ID everywhere</button></div>';
+  return h;
+}
+function sbPinBar(b) {
+  if(!['shopblock','reviewblock','formblock'].includes(b.type)) return;
+  const head = document.querySelector('#rpanel .ep-head'); if(!head) return;
+  const old = document.getElementById('sb-pinbar'); if(old) old.remove();
+  const d = document.createElement('div'); d.id = 'sb-pinbar'; d.dataset.bid = b.id; d.style.cssText = 'margin:-6px 0 14px';
+  d.innerHTML = sbPinHTML(b);
+  head.insertAdjacentElement('afterend', d);
+}
+function sbgPinRefresh() { const d = document.getElementById('sb-pinbar'); if(!d) return; const b = S.blocks.find(x => x.id === d.dataset.bid); if(b) d.innerHTML = sbPinHTML(b); }
+var SB_ADV = {
+  reviewblock: /^(Which reviews|Google connection|Rules|Style|Words)/i,
+  shopblock: /^(Customer fields|Google connection|Seller dashboard|Shop checklist)/i,
+  formblock: /^(Google Sheets Connection|Duplicate Submission|Submission Limit)/i
+};
+var _sbAdv = {};
+function sbGroupAdvanced(b){
+  const re = SB_ADV[b.type]; if(!re) return;
+  const ep = document.querySelector('#rpanel .ep'); if(!ep) return;
+  const kids = Array.from(ep.children), moved = []; let cur = false;
+  kids.forEach(k => {
+    if(k.classList.contains('ep-head')) return;
+    if(k.classList.contains('ep-section')) cur = re.test((k.textContent||'').trim());
+    if(cur) moved.push(k);
+  });
+  if(!moved.length) return;
+  const open = _sbAdv[b.type] !== undefined ? _sbAdv[b.type] : !window.SB_LOCK;
+  const det = document.createElement('details'); det.className = 'adv-box'; if(open) det.open = true;
+  det.innerHTML = '<summary>More settings <small>advanced, change only if you know why</small></summary>';
+  moved.forEach(k => det.appendChild(k));
+  ep.appendChild(det);
+  det.addEventListener('toggle', () => { _sbAdv[b.type] = det.open; });
+}
+var _cbLockSeen = {};
 function renderEditor() {
   const panel = document.getElementById('rpanel');
   if (!panel) return;
@@ -2858,6 +2926,8 @@ function renderEditor() {
     </div>
     ${renderBlockForm(b)}
   </div>`;
+  sbGroupAdvanced(b);
+  sbPinBar(b);
   // Restore collapse states after re-render
   restoreCollapseState();
   // If this is a form block, immediately check for duplicate labels
@@ -2868,7 +2938,10 @@ function renderEditor() {
   // Custom block: load CodeMirror (scripts in innerHTML don't execute, so trigger here)
   if(b.type === 'customblock') {
     const _cbId = b.id;
-    cbLoadCM(function(){ if(document.getElementById('cb-cm-host')) cbMountEditor(_cbId); });
+    cbLoadCM(function(){ if(document.getElementById('cb-cm-host')) cbMountEditor(_cbId);
+      if(window.SB_LOCK && !_cbLockSeen[_cbId]){ _cbLockSeen[_cbId] = 1;
+        try { const w = document.getElementById('cb-gallery-wrap'); if(w && !w.classList.contains('cb-gallery-collapsed')) cbToggleGallery();
+          if((b.data.code||'').trim()){ const ab = document.getElementById('cb-active-body'); if(ab && ab.style.display !== 'none') cbToggleActive(_cbId); } } catch(e) {} } });
   }
   // Theme block: mount CSS theme CodeMirror editor
   if(b.type === 'theme') {
@@ -4546,9 +4619,37 @@ function sbgGenerateScript(groupKey) {
   return { code, cfg, hash: sbgHash(json) };
 }
 // ── Setting changes from the panel ─────────────────────────────────
+function sbgAllBlocks() {
+  const seen = new Set(), out = [];
+  const add = bl => (bl || []).forEach(b => { if(b && !seen.has(b.id)) { seen.add(b.id); out.push(b); } });
+  add(S.blocks); (S.meta.pages || []).forEach(p => add(p.blocks));
+  return out;
+}
+function sbgCidAudit() {
+  const proj = String(sbgG().clientId || '').trim();
+  return sbgAllBlocks().filter(b => b.data && String(b.data.clientId || '').trim() && String(b.data.clientId).trim() !== proj);
+}
+function sbgCidClear() {
+  let n = 0;
+  sbgAllBlocks().forEach(b => { if(b.data && String(b.data.clientId || '').trim()) { b.data.clientId = ''; n++; } });
+  return n;
+}
+function sbgCidFixNow() {
+  const n = sbgCidClear();
+  fldrMarkUnsaved && fldrMarkUnsaved(); ghMarkDirty && ghMarkDirty(); sbPushHistory(); schedulePreview();
+  try { renderEditor(); } catch(e) {}
+  sbgMiniToast(n ? 'Now every block uses the project Client ID (' + n + ' fixed).' : 'Nothing to fix.');
+}
+function sbgMiniToast(msg) {
+  const d = document.createElement('div');
+  d.textContent = msg;
+  d.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--acc);color:#111;font-weight:600;font-size:12px;padding:9px 16px;border-radius:99px;z-index:100001;box-shadow:0 6px 20px rgba(0,0,0,.4)';
+  document.body.appendChild(d); setTimeout(() => d.remove(), 3200);
+}
 function sbgSet(key, val) {
   const g = sbgG();
   g[key] = String(val).trim();
+  if(key === 'clientId') { clearTimeout(sbgSet._c); sbgSet._c = setTimeout(() => { const n = sbgCidClear(); if(n) sbgMiniToast('Client ID applied everywhere (' + n + ' block override' + (n === 1 ? '' : 's') + ' removed).'); sbgPinRefresh(); }, 900); }
   fldrMarkUnsaved && fldrMarkUnsaved(); ghMarkDirty && ghMarkDirty();
   clearTimeout(sbgSet._t); sbgSet._t = setTimeout(() => { sbPushHistory(); schedulePreview(); }, 700);
   sbgRefreshPanels();
@@ -4839,7 +4940,6 @@ function renderReviewBlockEditor(id, d) {
     ${fi(id,'maxPerEmail','Reviews allowed per person',String(d.maxPerEmail||1),'1 to 5')}
     ${togField(id,'allowEdit','Let people edit their own review',d.allowEdit!==false)}
     ${fi(id,'cooldownSec','Wait between sends (seconds)',String(d.cooldownSec!=null?d.cooldownSec:30))}
-    ${fi(id,'confirmSeconds','Countdown before "Send" unlocks (seconds)',String(d.confirmSeconds!=null?d.confirmSeconds:5))}
     ${fselect(id,'moderation','New reviews',[{v:'auto',l:'Show immediately'},{v:'approve',l:'Wait until I approve them in the Sheet'}],d.moderation||'auto')}
     <div class="fg-hint" style="margin:-6px 0 10px">To hide a review, type <strong>hidden</strong> in its Status cell. To approve one, type <strong>visible</strong>. To delete one, delete the row.</div>
     ${sbgAccountsHTML(id,d,'onlyGmail','allowedDomain','')}
@@ -8078,19 +8178,38 @@ const SOCIAL_MAP_B = [
 // Globe SVG fallback — uses currentColor so it adapts to dark/light mode
 const GLOBE_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
 
+const SOCIAL_ALIAS = { 'wa.me':'whatsapp', 'wa.link':'whatsapp', 'whatsapp.com':'whatsapp', 'api.whatsapp.com':'whatsapp', 'chat.whatsapp.com':'whatsapp', 'web.whatsapp.com':'whatsapp', 'whats.app':'whatsapp',
+  't.me':'telegram', 'telegram.me':'telegram', 'telegram.dog':'telegram', 'telegram.org':'telegram', 'web.telegram.org':'telegram',
+  'instagr.am':'instagram.com', 'ig.me':'instagram.com', 'youtu.be':'youtube.com', 'fb.com':'facebook.com', 'fb.me':'facebook.com', 'fb.watch':'facebook.com', 'lnkd.in':'linkedin.com', 'redd.it':'reddit.com', 'discord.gg':'discord.com', 'pin.it':'pinterest.com', 'vm.tiktok.com':'tiktok.com' };
+function socialNorm(url) {
+  const raw = String(url || '').toLowerCase().trim();
+  if(/^(whatsapp|wa):/.test(raw)) return 'whatsapp';
+  if(/^tg:/.test(raw)) return 'telegram';
+  try {
+    const host = new URL(/^[a-z][a-z0-9+.-]*:/.test(raw) ? raw : 'https://' + raw).hostname.replace(/^www\./, '');
+    if(SOCIAL_ALIAS[host]) return SOCIAL_ALIAS[host];
+  } catch(e) {}
+  return raw;
+}
+function socialHit(u, key) {
+  let host = '';
+  try { host = new URL(/^[a-z][a-z0-9+.-]*:/.test(u) ? u : 'https://' + u).hostname.replace(/^www\./, ''); } catch(e) { return u.includes(key); }
+  if(key.indexOf('.') < 0) return host.includes(key);
+  return host === key || host.endsWith('.' + key);
+}
 function detectSocialIcon(url) {
   if(!url||url==='#'||!url.trim()) return {svg:GLOBE_SVG,label:'Link'};
-  const u = url.toLowerCase();
+  const u = socialNorm(url);
   for(const [match,svg,label] of SOCIAL_MAP_B) {
-    if(u.includes(match)) return {svg,label};
+    if(socialHit(u, match)) return {svg,label};
   }
   return {svg:GLOBE_SVG,label:'Unknown platform'};
 }
 function detectSocialLabel(url) {
   if(!url||url==='#'||!url.trim()) return 'Unknown platform';
-  const u = url.toLowerCase();
+  const u = socialNorm(url);
   for(const [match,,label] of SOCIAL_MAP_B) {
-    if(u.includes(match)) return label;
+    if(socialHit(u, match)) return label;
   }
   return 'Unknown platform';
 }
@@ -13371,9 +13490,76 @@ give them an actual starting point. A useful reply:
    SITES, GITHUB SYNC, etc.) for anything past the starter.`;
 
 
+window.__sbErrs = [];
+function sbErrPush(m){ try { m = String(m||'').replace(/(ghp_|github_pat_)[A-Za-z0-9_]+/g,'[token]').replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,'[email]').slice(0,220); window.__sbErrs.push(m); if(window.__sbErrs.length > 6) window.__sbErrs.shift(); } catch(e) {} }
+window.addEventListener('error', e => sbErrPush((e.message||'error') + ' @' + String(e.filename||'').split('/').pop() + ':' + (e.lineno||'')));
+window.addEventListener('unhandledrejection', e => sbErrPush('promise: ' + ((e.reason && e.reason.message) || e.reason)));
+var _AI_LOCK = `YOU ARE THE GUIDE FOR "SITE MANAGER"
+Mode: SITE MANAGER (restricted). The person talking to you is a website OWNER, not a developer. Assume they have never used a tool like this and may be nervous about breaking something.
+
+HOW TO TALK TO THEM
+- Plain, calm, friendly language. No jargon. If you must use a technical word, explain it in a few words.
+- Give ONE step at a time and wait for them to answer before the next step. Never dump a long list.
+- Tell them exactly what to click, using the names below. Ask what they see on screen if you are not sure.
+- If they report an error, ask them to read it out or paste it (the app also lists recent errors below). Do not guess; ask one short question if needed.
+- Never ask for, repeat or store their GitHub token or any password. If they paste one by accident, tell them to revoke it on GitHub and make a new one.
+- If something is outside this app's limits or could damage the site, say so and tell them to contact their developer. Offer a short message they can copy and send: what they were doing, what they saw, and the recent errors below.
+
+WHAT THIS APP IS
+Site Manager lets an owner edit their existing website, which is stored in a GitHub repository. They connect once, change text/images/prices/settings, check the preview, then send the changes to GitHub. The website updates automatically a minute or two later.
+
+WHAT THE OWNER CAN DO
+- Connect their site: Home screen > New Project > enter GitHub owner (username), repository name and access token. The site loads automatically.
+- Edit any existing block: click it in the left list, then change fields on the right. The live preview updates.
+- Hide or show a block with the eye button on the block (hiding does not delete it).
+- Move blocks up and down.
+- Add a Custom Block (their own HTML/CSS/JS) with + Add Block. Only Custom Blocks can be added. They can delete only the custom blocks they added themselves.
+- Upload and replace images inside blocks.
+- Edit page titles, SEO fields and navigation labels.
+- Publish: Export menu > Sync to GitHub. Make a backup: Export menu > the ZIP option.
+- Undo with the undo button if they just made a mistake.
+
+WHAT THE OWNER CANNOT DO (do not tell them how to bypass this)
+- Add or delete pages, add any block other than Custom Block, delete blocks made by the developer, import a project from a file or folder, or start a blank project.
+- If they ask for any of these, explain it is locked in Site Manager and they should contact their developer.
+
+CAREFUL SETTINGS
+Shop, Review and Form blocks have a collapsed "More settings" area. It holds the Script URL, Client ID, tab names, field IDs, limits and similar. These connect the website to its Google Sheet. Tell the owner to leave them alone unless the developer asks. If they changed something and the shop or reviews stopped working, ask them to change it back (undo if possible) and contact the developer. If an orange warning says the script was changed, only the developer can fix it by updating the Google Apps Script.
+
+COMMON PROBLEMS AND WHAT TO DO
+1. "Token is not valid or has expired": the access token ran out or was typed wrong. Ask them to copy it again from their developer, with no spaces. If it still fails, the developer must make a new one.
+2. "Repository not found": the owner name or repository name has a typo, or the token has no access to that repository. Re-check spelling (capital letters matter).
+3. "Cannot save changes / token cannot write": the token is read-only. The developer must create one with Contents: read and write.
+4. "Could not load the site / data.json": the repository was not published from Site Builder. Contact the developer.
+5. Changes do not appear on the live website: wait 2 minutes, then reload with Ctrl+Shift+R (Cmd+Shift+R on Mac), or open the site in a private window. Confirm they pressed Sync to GitHub and saw it finish.
+6. Preview is blank or odd: reload this page. If it persists, the last Custom Block they added may have a code error; hide that block and see if the preview returns.
+7. An image will not upload: use JPG, PNG or WebP, ideally under 2 MB.
+8. Shop, orders, reviews or the seller dashboard stop working: do not edit anything else; contact the developer.
+9. They lost changes: unpublished edits live only in this browser. Never clear browser data before syncing.
+10. They are unsure whether the site updated: ask them to open the live website in a private window.
+
+SAFE HABITS TO TEACH (briefly, when relevant)
+Sync to GitHub after each set of edits. Make a ZIP backup before big changes. Do not share the access token. Log out and remove the project on shared computers.`;
+function sbAiContext(){
+  const L = [];
+  try {
+    L.push('CURRENT SESSION (generated by the app when the Guide was opened)');
+    L.push('Mode: ' + (window.SB_LOCK ? 'SITE MANAGER (restricted)' : 'FULL SITE BUILDER (admin)'));
+    L.push('Project: ' + ((S.meta && S.meta.title) || 'Untitled'));
+    const g = S.meta && S.meta.github; L.push('GitHub: ' + (g && g.owner ? 'connected to ' + g.owner + '/' + g.repo : 'not connected'));
+    L.push('Blocks on this page: ' + (S.blocks.map(b => ((DEFS[b.type]||{}).label || b.type) + (b.hidden ? ' (hidden)' : '')).join(', ') || 'none'));
+    const sel = S.blocks.find(b => b.id === S.selectedId); L.push('Selected block: ' + (sel ? ((DEFS[sel.type]||{}).label || sel.type) : 'none'));
+    L.push('Recent errors: ' + (window.__sbErrs.length ? window.__sbErrs.join(' | ') : 'none'));
+  } catch(e) { L.push('(context unavailable)'); }
+  return L.join('\n');
+}
+function sbAiBuild(){
+  if(window.SB_LOCK) return _AI_LOCK + '\n\n' + sbAiContext() + '\n\n----- REFERENCE FOR THE AI ONLY (the owner cannot use every feature below in Site Manager) -----\n' + _AI_GUIDE;
+  return 'MODE: FULL SITE BUILDER (admin). The person is the developer/admin; every feature below is available. Be precise and technical when they are.\n\n' + sbAiContext() + '\n\n' + _AI_GUIDE;
+}
 function openAIModal() {
   const ta = document.getElementById('ai-guide-text');
-  if (ta) ta.value = _AI_GUIDE;
+  if (ta) ta.value = sbAiBuild();
   document.getElementById('ai-modal').classList.remove('hidden');
 }
 function closeAIModal() {
