@@ -409,9 +409,9 @@ button.btn.tn-sm{padding:4px 11px;font-size:11px;}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
         Connect GitHub
       </button>
-      <button id="gh-sync-menu-item" onclick="ghSyncProject();toggleExportMenu()" style="display:none;width:100%;padding:9px 14px;background:none;border:none;color:var(--txt);font-size:12px;font-weight:500;cursor:pointer;text-align:left;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'" title="Pushes every page + assets to this project's connected GitHub repo">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Sync to GitHub
+      <button id="gh-import-menu-item" onclick="ghMenuImport();toggleExportMenu()" title="Load the latest version of this site from GitHub" style="display:flex;width:100%;padding:9px 14px;background:none;border:none;color:var(--txt);font-size:12px;font-weight:500;cursor:pointer;text-align:left;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Import from GitHub
       </button>
       <button id="gh-force-menu-item" onclick="ghSyncProject(true);toggleExportMenu()" title="Sends a fresh commit even when no file changed, which makes GitHub Pages publish again. Use it if the live site looks old." style="display:none;width:100%;padding:9px 14px;background:none;border:none;color:var(--txt);font-size:12px;font-weight:500;cursor:pointer;text-align:left;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
@@ -1554,6 +1554,12 @@ function ghMarkDirty() {
     ghUpdateStatus();
   }
 }
+function ghMenuImport() {
+  const gh = S.meta && S.meta.github;
+  if(gh && gh.token) { ghImportProject(); return; }
+  if(window.SB_LOCK) { sbCreateNew(); return; }
+  ghOpenConnectModal();
+}
 function ghIconClick() {
   if(S.meta.github && S.meta.github.token) ghSyncProject();
   else ghOpenConnectModal();
@@ -1669,7 +1675,38 @@ async function ghImportProject() {
   ghCloseConnectModal();
   await ghDoImport(gh);
 }
+function sbBusy(on, msg) {
+  let o = document.getElementById('sb-busy');
+  if(!on) { if(o) o.remove(); return; }
+  if(!o) {
+    o = document.createElement('div'); o.id = 'sb-busy';
+    o.style.cssText = 'position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:rgba(10,10,9,.72);backdrop-filter:blur(3px)';
+    o.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;gap:14px;background:var(--bg2);border:1px solid var(--acc);border-radius:14px;padding:26px 34px;color:var(--txt);font-size:13px;font-weight:600;box-shadow:0 18px 50px rgba(0,0,0,.55)"><span style="width:34px;height:34px;border:3px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sbbspin .7s linear infinite"></span><span id="sb-busy-msg"></span><small style="font-weight:400;color:var(--txt3)">Please wait, do not close this page.</small></div><style>@keyframes sbbspin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(o);
+  }
+  const m = document.getElementById('sb-busy-msg'); if(m) m.textContent = msg || 'Loading...';
+}
+function ghSigHash(s) { let h = 2166136261; for(let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + s.length; }
+function ghSig() {
+  try { sbSyncActivePage(); const m = Object.assign({}, S.meta); delete m.github; return ghSigHash(JSON.stringify({ b: S.blocks, m: m })); } catch(e) { return ''; }
+}
+var _ghSyncSigs = {};
+function ghSetSyncSig() { _ghSyncSigs[_sbCurrentId || 'x'] = ghSig(); }
+function ghRecheckDirty() {
+  const gh = S.meta && S.meta.github; if(!gh || !gh.token) return;
+  const base = _ghSyncSigs[_sbCurrentId || 'x']; if(!base) return;
+  const clean = ghSig() === base;
+  gh.dirty = !clean;
+  if(clean && gh.lastSyncStatus !== 'error') gh.lastSyncStatus = 'synced';
+  ghUpdateStatus();
+}
 async function ghDoImport(cfg) {
+  const before = _sbCurrentId;
+  sbBusy(true, 'Importing your site from GitHub...');
+  try { await ghDoImport0(cfg); } finally { sbBusy(false); }
+  if(_sbCurrentId !== before) ghSetSyncSig();
+}
+async function ghDoImport0(cfg) {
   const manifestPath = cfg.path ? cfg.path+'/data.json' : 'data.json';
   let got;
   try { got = await ghContentsGet(cfg.owner, cfg.repo, manifestPath, cfg.branch, cfg.token); }
@@ -1689,6 +1726,7 @@ async function ghDoImport(cfg) {
   S.blocks = data.blocks || [];
   S.selectedId = null;
   S.meta.github = { owner:cfg.owner, repo:cfg.repo, branch:cfg.branch, path:cfg.path, token:cfg.token, dirty:false, lastSyncStatus:'synced', lastSyncTime:Date.now() };
+  if(S.meta.google && typeof S.meta.google === 'object') S.meta.google.ghUser = cfg.owner;
   sbMigratePagesIfNeeded();
   document.getElementById('tn-title').value = S.meta.title||'';
   tnSyncFilenameDisplay();
@@ -1911,6 +1949,7 @@ async function ghSyncProject(force) {
   if(fail === 0) {
     gh.dirty = false;
     gh.lastSyncStatus = 'synced';
+    ghSetSyncSig();
     sbPersistCurrent(); // quiet bookkeeping save — not schedulePushHistory(), which would immediately re-flag dirty via ghMarkDirty()
     ghUpdateStatus();
     const _cid = String(sbgG().clientId || '').trim(); const _cidTxt = _cid ? '\nGoogle Client ID on this site: ' + _cid.slice(0, 12) + '...' + _cid.replace('.apps.googleusercontent.com', '').slice(-6) + '.apps.googleusercontent.com' : '';
@@ -5183,7 +5222,7 @@ function renderShopBlockEditor(id, d) {
     <div class="fg-label" style="margin-top:8px;font-weight:600">Price and discount</div>
     <div class="fg-hint">With no packages the price below is used. Old price is only for the strikethrough and the discount percent. The customer always pays the normal price.</div>
     <div style="display:flex;gap:8px">${fi(id, k+'price', 'Price', p.price)}${fi(id, k+'oldPrice', 'Old price (optional)', p.oldPrice||'')}</div>
-    ${(p.packages||[]).map((q, j) => `<div style="display:flex;gap:6px;align-items:flex-end">${fi(id, k+'packages.'+j+'.label', 'Package', q.label)}${fi(id, k+'packages.'+j+'.price', 'Price', q.price)}${fi(id, k+'packages.'+j+'.old', 'Old price', q.old||'')}${btn('✕', `shOp('${id}','delK',${i},${j})`)}</div>`).join('')}
+    ${(p.packages||[]).map((q, j) => `<div style="display:flex;gap:6px;align-items:flex-end">${fi(id, k+'packages.'+j+'.label', 'Package', q.label)}${fi(id, k+'packages.'+j+'.price', 'Price', q.price)}${fi(id, k+'packages.'+j+'.old', 'Old price', q.old||'')}<button class="btn btn-sm" type="button" title="Remove package" onclick="shOp('${id}','delK',${i},${j})" style="flex:none;align-self:flex-end;margin:0 0 1.1rem 0;height:34px;width:34px;padding:0;display:inline-flex;align-items:center;justify-content:center">✕</button></div>`).join('')}
     ${btn('+ Package', `shOp('${id}','addK',${i})`)}
     <div class="fg-label" style="margin-top:8px;font-weight:600">Labels</div>
     ${fi(id, k+'badge', 'Category tag (small, e.g. Free Fire / Top up)', p.badge||'')}
@@ -8920,7 +8959,7 @@ function sbUndo() {
   _redoStack.push(_undoStack.pop());
   const snap = JSON.parse(_undoStack[_undoStack.length-1]);
   _undoPaused = true;
-  S.blocks = snap.blocks; S.meta = snap.meta;
+  S.blocks = snap.blocks; { const _gh = S.meta && S.meta.github; S.meta = snap.meta; if(_gh) S.meta.github = _gh; }
   document.getElementById('tn-title').value = S.meta.title||'';
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
@@ -8928,6 +8967,7 @@ function sbUndo() {
   _undoPaused = false;
   sbUpdateUndoButtons();
   showUpdatedToast();
+  ghRecheckDirty();
 }
 
 function sbRedo() {
@@ -8935,7 +8975,7 @@ function sbRedo() {
   const snap = JSON.parse(_redoStack.pop());
   _undoStack.push(JSON.stringify(snap));
   _undoPaused = true;
-  S.blocks = snap.blocks; S.meta = snap.meta;
+  S.blocks = snap.blocks; { const _gh = S.meta && S.meta.github; S.meta = snap.meta; if(_gh) S.meta.github = _gh; }
   document.getElementById('tn-title').value = S.meta.title||'';
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
@@ -8943,6 +8983,7 @@ function sbRedo() {
   _undoPaused = false;
   sbUpdateUndoButtons();
   showUpdatedToast();
+  ghRecheckDirty();
 }
 
 function sbUpdateUndoButtons() {
@@ -13610,8 +13651,38 @@ window.loadPreviewFromCache = function(label) {
 // ═══════════════════════════════════════════
 // HELP MODAL
 // ═══════════════════════════════════════════
-function showHelpModal() { document.getElementById('help-modal').classList.remove('hidden'); }
-function hideHelpModal() { document.getElementById('help-modal').classList.add('hidden'); }
+// ---- Tutorial videos: change these two IDs (the part after v= in a YouTube link) ----
+const SB_HELP_VIDEO_ADMIN = 'dQw4w9WgXcQ';
+const SB_HELP_VIDEO_LOCK = 'jNQXAC9IVRw';
+var _helpAdminHTML = null;
+function sbHelpLockHTML() {
+  const tile = (h, b) => `<div style="background:var(--bg3);border-radius:8px;padding:12px 14px;border-left:3px solid var(--acc)"><div style="font-size:12px;font-weight:600;color:var(--txt);margin-bottom:4px">${h}</div><div style="font-size:12px;color:var(--txt2);line-height:1.65">${b}</div></div>`;
+  const k = s => `<strong style="color:var(--acc)">${s}</strong>`;
+  return `<p style="font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:1rem">Welcome to ${k('Site Manager')}. You can change the text, images, prices and settings of your website here, then publish the changes. You cannot break the layout: pages and the main blocks are locked.</p>
+  <div style="display:grid;gap:10px;margin-bottom:1.25rem">
+    ${tile('1. Open your site', 'Press ' + k('New Project') + ' and enter the GitHub owner, repository name and access token your developer gave you. Your site loads by itself. You only do this once per device.')}
+    ${tile('2. Edit', 'Click a block in the list on the left, then change its fields on the right. The preview updates as you type. Use the ' + k('eye button') + ' on a block to hide or show it. Blocks cannot be deleted, only hidden.')}
+    ${tile('3. Your own blocks', 'You can add a ' + k('Custom Block') + ' with ' + k('+ Add Block') + '. You can delete the Custom Blocks you added yourself. No other block type or page can be added.')}
+    ${tile('4. Images', 'Open the image field in a block and upload a new picture, or paste a link. Use JPG, PNG or WebP, ideally under 2 MB.')}
+    ${tile('5. Shop prices and products', 'You can edit products, prices and packages in the Shop block. After a change, the ' + k('Show script') + ' button turns gold. That means the shop script must be updated. Press it, copy the script and paste it into your Google Apps Script as your developer showed you, or send it to your developer.')}
+    ${tile('6. Publish', 'The ' + k('GitHub icon') + ' at the top shows the state. Orange means you have changes that are not published. Green means published. Click it to publish, wait one or two minutes, then reload your website with Ctrl+Shift+R. If your site still looks old, open ' + k('Export') + ' and choose ' + k('Force republish') + '.')}
+    ${tile('7. Undo, backup, restore', 'The undo arrow reverts your last change. ' + k('Export  Export All Pages (.zip)') + ' saves a backup. ' + k('Export  Import from GitHub') + ' reloads the published version if you want to start over.')}
+    ${tile('8. Settings to leave alone', 'Script URL, Client ID, tab names and field IDs connect your site to Google. Do not change them unless your developer asks. Look for the section named ' + k('More settings') + ' only if you know why.')}
+    ${tile('9. Stuck?', 'Press ' + k('AI Guide') + ', copy the text and paste it into any AI chat (for example Claude or ChatGPT). It knows this app and will walk you through the problem. If it cannot fix it, send your developer what the AI Guide window shows under Recent errors.')}
+  </div>`;
+}
+function showHelpModal() {
+  const body = document.getElementById('help-modal-body'), title = document.querySelector('#help-modal .modal-title');
+  if(body) {
+    if(_helpAdminHTML === null) _helpAdminHTML = body.innerHTML;
+    const vid = window.SB_LOCK ? SB_HELP_VIDEO_LOCK : SB_HELP_VIDEO_ADMIN;
+    body.innerHTML = window.SB_LOCK ? sbHelpLockHTML() + `<div id="help-video-section" style="border-top:1px solid var(--bdr);padding-top:1.1rem"><div style="font-size:12px;font-weight:600;color:var(--txt);margin-bottom:.6rem">Video Tutorial</div><div style="border-radius:10px;overflow:hidden;background:var(--bg3);border:1px solid var(--bdr)"><div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px"><iframe src="https://www.youtube.com/embed/${vid}" style="position:absolute;inset:0;width:100%;height:100%;border:0" allowfullscreen></iframe></div></div></div>` : _helpAdminHTML;
+    if(!window.SB_LOCK) { const f = body.querySelector('iframe'); if(f) f.src = 'https://www.youtube.com/embed/' + vid; }
+  }
+  if(title) title.textContent = window.SB_LOCK ? 'Site Manager  Help & Tutorial' : 'Blog Builder  Help & Tutorial';
+  document.getElementById('help-modal').classList.remove('hidden');
+}
+function hideHelpModal() { document.getElementById('help-modal').classList.add('hidden'); const b = document.getElementById('help-modal-body'); if(b) b.querySelectorAll('iframe').forEach(f => { const s = f.src; f.src = ''; f.src = s; }); }
 
 
 // ═══════════════════════════════════════════════════════════
