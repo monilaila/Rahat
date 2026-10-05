@@ -465,7 +465,7 @@ button.btn.tn-sm{padding:4px 11px;font-size:11px;}
     <div class="pvw-toolbar">
       <span class="pvw-label">Live Preview</span>
       <button class="pvw-btn" id="pvw-mode-btn" title="Toggle dark/light mode" onclick="bbThemeToggle(S.meta.theme==='light'?'dark':'light')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
-      <button class="pvw-btn" onclick="updatePreview()">↻</button>
+      <button class="pvw-btn" onclick="updatePreview(true)" title="Reload preview">↻</button>
     </div>
     <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
   </div>
@@ -1450,7 +1450,7 @@ async function fldrOpenFromFolder() {
     tnSyncFilenameDisplay();
     sbSyncFilenameBadge();
     document.getElementById('tn-theme').value = S.meta.theme||'dark';
-    _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[];
+    _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[]; sbAfterOpen();
     sbUpdateUndoButtons();
     renderBlockList(); renderEditor();
     if(splitActive) updatePreview();
@@ -1552,10 +1552,10 @@ function ghUpdateStatus() {
 // Called from schedulePushHistory() on every edit — flips the dot to yellow
 // the moment there's something a sync hasn't seen yet.
 function ghMarkDirty() {
-  if(S.meta && S.meta.github && S.meta.github.token && !S.meta.github.dirty) {
-    S.meta.github.dirty = true;
-    ghUpdateStatus();
-  }
+  const gh = S.meta && S.meta.github; if(!gh || !gh.token) return;
+  if(!ghBaseSig()) { if(!gh.dirty) { gh.dirty = true; ghUpdateStatus(); } return; } // nothing to compare with yet
+  clearTimeout(_ghDirtyT);
+  _ghDirtyT = setTimeout(ghRecheckDirty, 250); // compare with the pushed fingerprint: same = green, different = orange
 }
 function ghMenuImport() {
   const gh = S.meta && S.meta.github;
@@ -1693,11 +1693,24 @@ function ghSigHash(s) { let h = 2166136261; for(let i = 0; i < s.length; i++) { 
 function ghSig() {
   try { sbSyncActivePage(); const m = Object.assign({}, S.meta); delete m.github; return ghSigHash(JSON.stringify({ b: S.blocks, m: m })); } catch(e) { return ''; }
 }
-var _ghSyncSigs = {};
-function ghSetSyncSig() { _ghSyncSigs[_sbCurrentId || 'x'] = ghSig(); }
+var _ghSyncSigs = {}, _ghDirtyT = null;
+function ghSigKey() { return 'sb_ghsig_' + (_sbCurrentId || 'x'); }
+function ghStoreSig(s) { _ghSyncSigs[_sbCurrentId || 'x'] = s; try { localStorage.setItem(ghSigKey(), s); } catch(e) {} }
+function ghSetSyncSig() { ghStoreSig(ghSig()); }
+function ghBaseSig() {
+  const k = _sbCurrentId || 'x'; let b = _ghSyncSigs[k];
+  if(!b) { try { b = localStorage.getItem(ghSigKey()) || ''; } catch(e) { b = ''; } if(b) _ghSyncSigs[k] = b; }
+  return b || '';
+}
+// A project has just been opened or loaded: if it is shown as synced, that state is the baseline.
+function ghOnProjectOpen() {
+  const gh = S.meta && S.meta.github; if(!gh || !gh.token) return;
+  if(!gh.dirty && gh.lastSyncStatus === 'synced') ghSetSyncSig();
+  ghUpdateStatus();
+}
 function ghRecheckDirty() {
   const gh = S.meta && S.meta.github; if(!gh || !gh.token) return;
-  const base = _ghSyncSigs[_sbCurrentId || 'x']; if(!base) return;
+  const base = ghBaseSig(); if(!base) return;
   const clean = ghSig() === base;
   gh.dirty = !clean;
   if(clean && gh.lastSyncStatus !== 'error') gh.lastSyncStatus = 'synced';
@@ -1739,7 +1752,7 @@ async function ghDoImport0(cfg) {
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
   document.getElementById('tn-theme').value = S.meta.theme||'dark';
-  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[];
+  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[]; sbAfterOpen();
   sbUpdateUndoButtons();
   renderBlockList(); renderEditor();
   try { sbgRefreshPanels(); } catch(e) {}
@@ -1911,6 +1924,7 @@ async function ghSyncProject(force) {
   sbSyncActivePage();
   let files;
   try {
+  const _pushedSig = ghSig();
     files = fldrBuildAllPageFiles();
     const images = await fldrExtractImages(files);
     fldrSplitAssets(files);
@@ -1960,7 +1974,7 @@ async function ghSyncProject(force) {
   if(fail === 0) {
     gh.dirty = false;
     gh.lastSyncStatus = 'synced';
-    ghSetSyncSig();
+    ghStoreSig(_pushedSig); ghRecheckDirty(); // edits made while the push was running stay orange
     sbPersistCurrent(); // quiet bookkeeping save — not schedulePushHistory(), which would immediately re-flag dirty via ghMarkDirty()
     ghUpdateStatus();
     const _cid = String(sbgG().clientId || '').trim(); const _cidTxt = _cid ? '\nGoogle Client ID on this site: ' + _cid.slice(0, 12) + '...' + _cid.replace('.apps.googleusercontent.com', '').slice(-6) + '.apps.googleusercontent.com' : '';
@@ -9305,7 +9319,7 @@ function pgSwitchPage(pageId) {
   document.getElementById('tn-title').value=S.meta.title||'';
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
-  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[];
+  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[]; sbAfterOpen();
   sbUpdateUndoButtons();
   renderBlockList(); renderEditor();
   if(splitActive) updatePreview();
@@ -9611,7 +9625,7 @@ function pgDeletePage(id) {
     document.getElementById('tn-title').value=S.meta.title||'';
     tnSyncFilenameDisplay();
     sbSyncFilenameBadge();
-    _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[];
+    _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[]; sbAfterOpen();
     sbUpdateUndoButtons();
     renderBlockList(); renderEditor();
     if(splitActive) updatePreview();
@@ -9792,8 +9806,22 @@ function schedulePreview() {
   }, 500);
 }
 
-function toggleSplit() {
+function sbEnsureSplit() {
+  setTimeout(() => {
+    try {
+      if (splitActive) { updatePreview(); return; }
+      if (localStorage.getItem('sb_split_pref') === 'off') return;   // you turned it off yourself
+      if (window.innerWidth < 900) return;                           // too narrow for two panes
+      const hs = document.getElementById('home-screen');
+      if (hs && getComputedStyle(hs).display !== 'none') return;     // still on the home screen
+      toggleSplit(true);
+    } catch(e) {}
+  }, 0);
+}
+function sbAfterOpen() { try { ghOnProjectOpen(); } catch(e) {} sbEnsureSplit(); }
+function toggleSplit(auto) {
   splitActive = !splitActive;
+  if (auto !== true) { try { localStorage.setItem('sb_split_pref', splitActive ? 'on' : 'off'); } catch(e) {} }
   const panel = document.getElementById('preview-panel');
   const btn   = document.getElementById('btn-split');
   const handle = document.getElementById('split-handle');
@@ -9895,19 +9923,30 @@ function openFullPreview() {
 function closeFullPreview() {
   document.getElementById('full-overlay').classList.add('hidden');
 }
-function updatePreview() {
-  setFrameSrc('preview-frame', 'split');
+const previewLastHTML = { split: null, full: null };
+// Ids inside the generated page come from Math.random(); seed it so building the same project twice gives
+// byte-identical HTML. That is what lets us tell "nothing changed" from "something changed".
+function sbBuildPreviewStable() {
+  const orig = Math.random; let st = 0x2F6E2B1;
+  Math.random = () => { st = (st + 0x6D2B79F5) >>> 0; let x = st; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  try { return buildPreviewHTML(); } finally { Math.random = orig; }
 }
-function updateFullPreview() {
-  setFrameSrc('full-frame', 'full');
+function updatePreview(force) {
+  setFrameSrc('preview-frame', 'split', force === true);
 }
-function setFrameSrc(frameId, key) {
-  if (previewBlobURLs[key]) URL.revokeObjectURL(previewBlobURLs[key]);
+function updateFullPreview(force) {
+  setFrameSrc('full-frame', 'full', force === true);
+}
+function setFrameSrc(frameId, key, force) {
   try {
-    const html = buildPreviewHTML();
+    const html = sbBuildPreviewStable();
+    const el = document.getElementById(frameId);
+    if (!force && el && previewBlobURLs[key] && previewLastHTML[key] === html && el.getAttribute('src')) return; // identical page: keep it, no reload
+    if (previewBlobURLs[key]) URL.revokeObjectURL(previewBlobURLs[key]);
     const blob = new Blob([html], {type:'text/html'});
     previewBlobURLs[key] = URL.createObjectURL(blob);
-    document.getElementById(frameId).src = previewBlobURLs[key];
+    previewLastHTML[key] = html;
+    el.src = previewBlobURLs[key];
   } catch(e) { console.error('Preview build failed:', e); }
 }
 
@@ -9952,13 +9991,15 @@ function sbPreviewNavigate(filename) {
   return true;
 }
 function sbRefreshPreviewFrames() {
-  const html = buildPreviewHTML();
+  const html = sbBuildPreviewStable();
   [['preview-frame','split'],['full-frame','full']].forEach(([frameId,key])=>{
     const el = document.getElementById(frameId);
     if(!el || !previewBlobURLs[key]) return; // only refresh a frame that's actually been shown before
+    if(previewLastHTML[key] === html) return;  // same page already showing
     URL.revokeObjectURL(previewBlobURLs[key]);
     const blob = new Blob([html], {type:'text/html'});
     previewBlobURLs[key] = URL.createObjectURL(blob);
+    previewLastHTML[key] = html;
     el.src = previewBlobURLs[key];
   });
 }
@@ -14161,7 +14202,7 @@ function npCreate() {
     fldrSaveHandle(id, _npFolderHandle);
   }
   renderBlockList(); renderEditor();
-  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[];
+  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[]; sbAfterOpen();
   sbUpdateUndoButtons();
   npClose();
   document.getElementById('home-screen').style.display = 'none';
@@ -14187,7 +14228,7 @@ function sbOpenProject(id) {
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
   document.getElementById('tn-theme').value=S.meta.theme||'dark';
-  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[];
+  _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[]; sbAfterOpen();
   sbUpdateUndoButtons();
   renderBlockList(); renderEditor();
   if(splitActive) updatePreview();
