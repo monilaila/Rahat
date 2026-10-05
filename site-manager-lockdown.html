@@ -1704,10 +1704,9 @@ function ghRecheckDirty() {
   ghUpdateStatus();
 }
 async function ghDoImport(cfg) {
-  const before = _sbCurrentId;
   sbBusy(true, 'Importing your site from GitHub...');
   try { await ghDoImport0(cfg); } finally { sbBusy(false); }
-  if(_sbCurrentId !== before) ghSetSyncSig();
+  ghSetSyncSig();
 }
 async function ghDoImport0(cfg) {
   const manifestPath = cfg.path ? cfg.path+'/data.json' : 'data.json';
@@ -1722,12 +1721,17 @@ async function ghDoImport0(cfg) {
     data = JSON.parse(ghBase64ToStr(b64));
   }
   catch(e) { alert('That manifest could not be parsed: '+e.message); return; }
-  sbPersistCurrent();
-  const id = 'proj_'+Date.now();
-  _sbCurrentId = id;
+  clearTimeout(_historyDebounceTimer);
+  const _old = _sbCurrentId ? S.meta : null;          // importing into the open project -> same project, same id
+  if(!_sbCurrentId) { sbPersistCurrent(); _sbCurrentId = 'proj_'+Date.now(); }
   S.meta = data.meta || {};
   S.blocks = data.blocks || [];
   S.selectedId = null;
+  if(_old) {                                           // things that never travel through GitHub stay as they were on this device
+    if(_old.folderAttached) { S.meta.folderAttached = _old.folderAttached; S.meta.folderName = _old.folderName; }
+    const se = _old.google && _old.google.sellerEmails;
+    if(se) { if(!S.meta.google || typeof S.meta.google !== 'object') S.meta.google = {}; if(!S.meta.google.sellerEmails) S.meta.google.sellerEmails = se; }
+  }
   S.meta.github = { owner:cfg.owner, repo:cfg.repo, branch:cfg.branch, path:cfg.path, token:cfg.token, dirty:false, lastSyncStatus:'synced', lastSyncTime:Date.now() };
   if(S.meta.google && typeof S.meta.google === 'object') S.meta.google.ghUser = cfg.owner;
   sbMigratePagesIfNeeded();
@@ -1738,6 +1742,8 @@ async function ghDoImport0(cfg) {
   _undoStack=[JSON.stringify({blocks:S.blocks,meta:S.meta})]; _redoStack=[];
   sbUpdateUndoButtons();
   renderBlockList(); renderEditor();
+  try { sbgRefreshPanels(); } catch(e) {}
+  clearTimeout(previewTimer);
   if(splitActive) updatePreview();
   document.getElementById('home-screen').style.display='none';
   renderProjectTabs(); renderPageTabs();
@@ -4247,9 +4253,10 @@ function shFields_(defs, given, title) {
   });
   return { lines: lines, json: json };
 }
-function shItems_(sh, items) {
-  if (!Array.isArray(items) || !items.length || items.length > (sh.multi ? 10 : 1)) fail_('ITEMS', 'Please choose what you want to order.');
-  var seen = {}, out = [];
+function shItems_(sh, items, shared) {
+  if (!Array.isArray(items) || !items.length) fail_('ITEMS', 'Please choose what you want to order.');
+  if (items.length > (sh.multi ? 10 : 1)) fail_('ITEMS', sh.multi ? 'You can order up to 10 items at once.' : 'This shop is still set to one item at a time in the Apps Script. Open Site Builder, Show script, copy it into Apps Script, save, and deploy a New version.');
+  var seen = {}, out = [], common = null;
   items.forEach(function (it) {
     var p = null;
     (sh.products || []).forEach(function (x) { if (x.id === it.p) p = x; });
@@ -4263,7 +4270,9 @@ function shItems_(sh, items) {
       price = k.price; label = k.label;
     }
     var q = p.allowQty ? Math.max(1, Math.min(parseInt(it.q, 10) || 1, 20)) : 1;
-    var f = shFields_(p.fields || sh.fields, it.f, (sh.multi ? p.title : ''));
+    var f;
+    if (p.fields) f = shFields_(p.fields, it.f, (sh.multi ? p.title : ''));
+    else { if (!common) common = shFields_(sh.fields, shared || it.f, ''); f = common; }
     out.push({ p: p.id, t: p.title, l: label, q: q, u: Number(price) || 0, f: f.json, lines: f.lines });
   });
   return out;
@@ -4281,11 +4290,11 @@ function shopOrder_(b) {
   if (ref.length < 8 || ref.length > 64) fail_('REF', 'Please reload the page and try again.');
   var cache = CacheService.getScriptCache(), ik = 'ck_' + sha_(u.email + '|' + ref), hit = cache.get(ik);
   if (hit) { try { return JSON.parse(hit); } catch (x) {} }
-  var items = shItems_(sh, b.items), total = 0;
+  var items = shItems_(sh, b.items, b.fields), total = 0;
   items.forEach(function (i) { total += i.u * i.q; });
   cooldown_(sh.id + '_o', u.email, sh.cooldownSec === undefined ? 15 : sh.cooldownSec);
-  var text = items.map(function (i) { return i.t + (i.l ? ' - ' + i.l : '') + (i.q > 1 ? ' x' + i.q : '') + ' (' + i.u * i.q + ')'; }).join('\n');
-  var details = [].concat.apply([], items.map(function (i) { return i.lines; })).join('\n');
+  var text = items.map(function (i) { return i.t + (i.l ? ' - ' + i.l : '') + ' x' + i.q + ' = ' + (sh.currency || '') + (i.u * i.q); }).join('\n');
+  var details = [].concat.apply([], items.map(function (i) { return i.lines; })).filter(function (x, n, a) { return a.indexOf(x) === n; }).join('\n');
   var res = withLock_(function () {
     var os = getSheet_(sh.tabs.orders, SH_OH), n = os.getLastRow(), open = 0;
     if (n > 1) {
@@ -5241,13 +5250,14 @@ function cnt(g){return st.orders.filter(function(o){return grp(o)===g}).length}
 function ago(s){var m=Math.max(0,Math.round((Date.now()-new Date(s).getTime())/60000));if(m<1)return 'just now';if(m<60)return m+' min ago';if(m<1440)return Math.round(m/60)+' h ago';return Math.round(m/1440)+' d ago'}
 function pn(n){var d=String(n||'').replace(/[^0-9]/g,'');if(d.indexOf('880')===0)d='0'+d.slice(3);else if(d.length===10&&d.charAt(0)==='1')d='0'+d;return d}
 function wnum(n){var d=String(n||'').replace(/[^0-9]/g,'');if(d.indexOf('880')===0)return d;if(d.charAt(0)==='0')return '88'+d;if(d.length===10&&d.charAt(0)==='1')return '880'+d;return d}
-function msg(o){return 'Hello! Your order '+o.id+' ('+String(o.items||'').split('\n').join(', ')+') total '+o.currency+' '+o.total+' has been received.'}
+function msg(o){return 'Hello! Your order '+o.id+' has been received.\n'+String(o.items||'')+'\nTotal: '+o.currency+' '+o.total}
+function itemsHTML(o){var L=o.lines;if(!Array.isArray(L)||!L.length)return esc(o.items);var q=0;L.forEach(function(x){q+=Number(x.q)||1});return '<b>'+L.length+(L.length>1?' products':' product')+' &middot; '+q+' in total</b>'+L.map(function(x){return '<div>'+esc(x.t)+(x.l?' - '+esc(x.l):'')+' <b>x'+(Number(x.q)||1)+'</b> = '+esc(o.currency)+' '+(Number(x.u)||0)*(Number(x.q)||1)+'</div>'}).join('')}
 function nm(o){var r='';String(o.details||'').split('\n').forEach(function(l){var i=l.indexOf(': ');if(!r&&i>0&&/name|নাম/i.test(l.slice(0,i)))r=l.slice(i+2)});return r}
 function title(){var n=cnt('new');document.title=(n?'('+n+') ':'')+'Orders'}
 function card(o){
  var g=grp(o),n=nm(o),h='<div class="c'+(g==='new'?' new':'')+'" data-id="'+esc(o.id)+'"><div class="t"><b>'+esc(o.id)+'</b><span class="ag">'+ago(o.created)+'</span><span class="ch '+esc(o.status)+'">'+esc(o.status)+'</span></div>';
  if(!o.wiped){var ini=String(n||o.email||'?').trim().charAt(0).toUpperCase()||'?';h+='<div class="who">'+(o.photo?'<img class="av" referrerpolicy="no-referrer" alt="'+esc(ini)+'" src="'+esc(o.photo)+'">':'<span class="av">'+esc(ini)+'</span>')+'<div>'+(n?'<div class="nm">'+esc(n)+'</div>':'')+'<div class="em">'+esc(o.email)+'</div></div></div>'}
- h+='<div class="it">'+esc(o.items)+'</div><div class="t"><span class="tt">'+esc(o.currency)+' '+esc(o.total)+'</span>'+(g==='hist'?'<span class="ch '+esc(o.payStatus)+'">'+esc(o.payStatus||'unpaid')+'</span>':'<button class="pay '+(o.payStatus==='paid'?'paid':'')+'" data-a="pay" title="Tap to change">'+(o.payStatus==='paid'?'Paid':'Unpaid')+'</button>')+'</div>';
+ h+='<div class="it">'+itemsHTML(o)+'</div><div class="t"><span class="tt">'+esc(o.currency)+' '+esc(o.total)+'</span>'+(g==='hist'?'<span class="ch '+esc(o.payStatus)+'">'+esc(o.payStatus||'unpaid')+'</span>':'<button class="pay '+(o.payStatus==='paid'?'paid':'')+'" data-a="pay" title="Tap to change">'+(o.payStatus==='paid'?'Paid':'Unpaid')+'</button>')+'</div>';
  if(o.wiped){h+='<div class="m">Personal data was removed (retention).</div>'}
  else{h+='<div class="wa"><span class="n">'+esc(pn(o.whatsapp))+'</span><button class="sm" data-a="cp" data-v="'+esc(pn(o.whatsapp))+'">Copy number</button><a class="b p sm" target="_blank" rel="noopener" href="https://wa.me/'+wnum(pn(o.whatsapp))+'?text='+encodeURIComponent(msg(o))+'" data-a="seen">WhatsApp</a></div>'}
  var A='';
@@ -5344,6 +5354,12 @@ function shBannerHTML(d) {
   const seen = (sbgG().scriptSeen || {})[sbgScriptKey(eff.scriptUrl)];
   return '<b>The Apps Script needs updating.</b> ' + (seen ? 'Something changed that the script depends on (products, prices, fields, email settings or other block settings). ' : 'This version of the script has not been copied yet. ') + 'Open <b>Show script</b>, copy it into Apps Script (replace everything), save, run <b>authorize</b> if asked, then Deploy &gt; Manage deployments &gt; pencil &gt; <b>New version</b>. Until then your live shop keeps using the old script.';
 }
+function shCurBad(d) {
+  const c = String((d && d.currency) || '').trim();
+  if(!c) return 'Enter a currency symbol such as ৳ or $. It is printed in front of every price.';
+  if(/\d/.test(c) || c.length > 4) return 'Currency should be a short symbol such as ৳ or $, not a number or a word. It is printed in front of every price.';
+  return '';
+}
 function shRefresh(id) {
   const b = S.blocks.find(x => x.id === id); if(!b || b.type !== 'shopblock') return;
   const d = b.data, probs = shProblems(d);
@@ -5355,6 +5371,8 @@ function shRefresh(id) {
   const bn = document.querySelector('[data-shbanner="' + id + '"]'), h = shBannerHTML(d);
   if(bn) { bn.innerHTML = h; bn.style.display = h ? 'block' : 'none'; }
   const pb = document.querySelector('[data-shprob="' + id + '"]'); if(pb) pb.style.display = probs.length ? 'block' : 'none';
+  const cu = document.querySelector('[data-shcur="' + id + '"]'); if(cu) { const m = shCurBad(d); cu.textContent = m; cu.style.display = m ? 'block' : 'none'; }
+  const em = document.querySelector('[data-shemailprob="' + id + '"]'); if(em) { const l = shEmailProblems(d); em.innerHTML = l.map(eH).join('<br>'); em.style.display = l.length ? 'block' : 'none'; }
 }
 document.addEventListener('input', e => { const t = e.target, id = t && t.getAttribute && t.getAttribute('data-id'); if(id && t.getAttribute('data-key')) setTimeout(() => shRefresh(id), 0); });
 function renderShopBlockEditor(id, d) {
@@ -5395,7 +5413,7 @@ function renderShopBlockEditor(id, d) {
   const bh = shBannerHTML(d);
   return `<div data-shbanner="${id}" style="display:${bh?'block':'none'};position:sticky;top:0;z-index:30;background:linear-gradient(rgba(249,115,22,.16),rgba(249,115,22,.16)),var(--bg);border:1px solid #f97316;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.35)">${bh}</div>
   <div data-shprob="${id}" style="display:${probs.length?'block':'none'};position:sticky;top:0;z-index:29;background:linear-gradient(rgba(239,68,68,.12),rgba(239,68,68,.12)),var(--bg);border:1px solid #ef4444;border-radius:8px;padding:8px 12px;color:#ef4444;font-size:12px;margin-bottom:8px">Fix the field label problems before copying the script.</div>
-  ${sec('Shop')}${fi(id,'title','Shop title',d.title)}${fi(id,'currency','Currency symbol',d.currency)}
+  ${sec('Shop')}${fi(id,'title','Shop title',d.title)}${fi(id,'currency','Currency symbol',d.currency)}<div data-shcur="${id}" style="color:#ef4444;font-size:12px;margin:-6px 0 8px;display:${shCurBad(d)?'block':'none'}">${shCurBad(d)}</div>
   ${ssel('mode','Selling mode',d.mode||'one',[['one','One at a time'],['multi','Multiple items (cart)']])}
   ${sck('showRecent','Show Recent Orders panel',d.showRecent!==false)}
   ${sck('photos','Show customers\' Google profile photos in Recent Orders (public)',d.photos!==false)}
@@ -8745,6 +8763,18 @@ document.addEventListener('change', e => {
   const arr = t.dataset.arr;
   const idx = t.dataset.idx !== undefined ? parseInt(t.dataset.idx) : null;
   const sub = t.dataset.sub;
+  if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') {
+    // 'input' already stored this text and scheduled the refresh; repeating it on blur made the preview reload twice.
+    const bb = S.blocks.find(x => x.id === id);
+    let cur;
+    try {
+      if (bb) {
+        if (arr && idx !== null && sub) cur = bb.data[arr] && bb.data[arr][idx] && bb.data[arr][idx][sub];
+        else if (key && key !== 'rows-raw') { cur = bb.data; key.split('.').forEach(k => { cur = cur == null ? undefined : cur[k]; }); }
+      }
+    } catch(_) { cur = undefined; }
+    if (cur !== undefined && String(cur) === t.value && !STRUCTURAL_FIELD_KEYS.has(key)) return;
+  }
   if (arr && idx !== null && sub) {
     updateArrItem(id, arr, idx, sub, t.value);
   } else if (key) {
@@ -9132,7 +9162,11 @@ function sbPushHistory() {
   sbUpdateUndoButtons();
 }
 
+function sbFlushHistory() {
+  if(_historyDebounceTimer) { clearTimeout(_historyDebounceTimer); _historyDebounceTimer = null; sbPushHistory(); }
+}
 function sbUndo() {
+  sbFlushHistory();
   if(_undoStack.length < 2) return;
   _redoStack.push(_undoStack.pop());
   const snap = JSON.parse(_undoStack[_undoStack.length-1]);
@@ -9141,7 +9175,9 @@ function sbUndo() {
   document.getElementById('tn-title').value = S.meta.title||'';
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
-  renderBlockList(); renderEditor(); schedulePreview(); renderProjectTabs(); renderPageTabs();
+  renderBlockList(); renderEditor(); renderProjectTabs(); renderPageTabs();
+  try { sbgRefreshPanels(); } catch(e) {}
+  clearTimeout(previewTimer); if(splitActive) updatePreview();
   _undoPaused = false;
   sbUpdateUndoButtons();
   showUpdatedToast();
@@ -9149,6 +9185,7 @@ function sbUndo() {
 }
 
 function sbRedo() {
+  clearTimeout(_historyDebounceTimer); _historyDebounceTimer = null;
   if(!_redoStack.length) return;
   const snap = JSON.parse(_redoStack.pop());
   _undoStack.push(JSON.stringify(snap));
@@ -9157,7 +9194,9 @@ function sbRedo() {
   document.getElementById('tn-title').value = S.meta.title||'';
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
-  renderBlockList(); renderEditor(); schedulePreview(); renderProjectTabs(); renderPageTabs();
+  renderBlockList(); renderEditor(); renderProjectTabs(); renderPageTabs();
+  try { sbgRefreshPanels(); } catch(e) {}
+  clearTimeout(previewTimer); if(splitActive) updatePreview();
   _undoPaused = false;
   sbUpdateUndoButtons();
   showUpdatedToast();
@@ -9654,9 +9693,10 @@ document.addEventListener('keydown', function(e) {
     return;
   }
   // ── Neither editor focused: project-level undo/redo
-  if(isCtrl && e.key==='z' && !e.shiftKey) { e.preventDefault(); sbUndo(); }
-  if(isCtrl && e.key==='z' && e.shiftKey)  { e.preventDefault(); sbRedo(); }
-  if(isCtrl && e.key==='y')                { e.preventDefault(); sbRedo(); }
+  const _k = String(e.key).toLowerCase();
+  if(isCtrl && _k==='z' && !e.shiftKey) { e.preventDefault(); sbUndo(); }
+  if(isCtrl && _k==='z' && e.shiftKey)  { e.preventDefault(); sbRedo(); }
+  if(isCtrl && _k==='y')                { e.preventDefault(); sbRedo(); }
 });
 
 // ─── Debounced history push (called on every field edit) ───
@@ -9666,6 +9706,7 @@ function schedulePushHistory() {
   ghMarkDirty();
   clearTimeout(_historyDebounceTimer);
   _historyDebounceTimer = setTimeout(() => {
+    _historyDebounceTimer = null;
     sbPushHistory();
   }, 1200);
 }
@@ -10421,9 +10462,9 @@ footer{background:var(--bg2);border-top:1px solid var(--bdr);padding:2.5rem 0;ma
 .sh-lb{display:block;font-size:13px;margin:8px 0;color:var(--txt2)}.sh-in{display:block;width:100%;box-sizing:border-box;padding:9px 10px;margin-top:4px;border:1px solid var(--bdr);border-radius:8px;background:var(--bg);color:var(--txt);font:inherit}
 .sh-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.sh-row .sh-in{flex:1;min-width:110px;margin:0}
 .sh-btn{padding:10px 16px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}.sh-btn.alt{background:var(--bg3);color:var(--txt)}.sh-btn.big{width:100%;margin-top:10px}.sh-btn:disabled{opacity:.5;cursor:not-allowed}
-.sh-link{background:none;border:0;color:var(--acc);cursor:pointer;font:inherit;padding:2px 4px}.sh-sum{display:flex;justify-content:space-between;gap:8px;padding:4px 0}.sh-sum.tot{border-top:1px solid var(--bdr);margin-top:6px;padding-top:8px;font-weight:700}
+.sh-link{background:none;border:0;color:var(--acc);cursor:pointer;font:inherit;padding:2px 4px}.sh-line{position:relative}.sh-line .sh-hi{padding-right:46px}.sh-rm{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:50%;border:1.5px solid #ef4444;background:rgba(239,68,68,.12);color:#ef4444;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:2;transition:background .15s,color .15s,transform .1s}.sh-rm:hover{background:#ef4444;color:#fff}.sh-rm:active{transform:scale(.92)}.sh-sum{display:flex;justify-content:space-between;gap:8px;padding:4px 0}.sh-sum.tot{border-top:1px solid var(--bdr);margin-top:6px;padding-top:8px;font-weight:700}
 .sh-big{font-size:1.4rem;font-weight:800;letter-spacing:.06em}.sh-pay{white-space:pre-wrap;background:var(--bg3);border-radius:8px;padding:10px;font-size:13px}.sh-rules{margin:0;padding-left:1.1rem;font-size:13px;color:var(--txt2)}
-.sh-cartbtn{position:sticky;bottom:16px;margin:12px 0 0 auto;display:flex;width:52px;height:52px;border-radius:50%;border:0;background:var(--acc);color:#fff;font-size:22px;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}.sh-cartbtn i{position:absolute;top:-4px;right:-4px;background:#ef4444;border-radius:99px;font:700 11px sans-serif;padding:2px 6px;font-style:normal}
+.sh-cartbtn{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);margin:0;z-index:50;display:none;width:54px;height:54px;border-radius:50%;border:0;background:var(--acc);color:#fff;font-size:22px;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}.sh-section.sh-inview .sh-cartbtn{display:flex}.sh-cartbtn:active{transform:translateY(-50%) scale(.94)}.sh-cartbtn i{position:absolute;top:-4px;right:-4px;background:#ef4444;border-radius:99px;font:700 11px sans-serif;padding:2px 6px;font-style:normal}
 .sh-fd{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--bdr)}.sh-fd>div{flex:1}.sh-fd small{display:block;color:var(--txt2);font-size:12px}.sh-av{width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
 .sh-s{font-style:normal;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--bg3)}.sh-s.done{background:#16a34a22;color:#16a34a}.sh-s.processing{background:#f9731622;color:#f97316}.sh-live{color:#16a34a;font-weight:600}
 .sh-rf{float:right;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid var(--bdr);border-radius:8px;background:var(--bg3);color:var(--txt2);cursor:pointer}.sh-rf:disabled{opacity:.45;cursor:not-allowed}.sh-rf.spin svg{animation:shsp .7s linear infinite}@keyframes shsp{to{transform:rotate(360deg)}}
@@ -11758,7 +11799,7 @@ function shTotal(S){ var t = 0; S.lines.forEach(function(l){ t += shLine(S, l); 
 function shRemKey(S, f){ return 'shrem_' + (S.cfg.shop || 'x') + '_' + f.id; }
 function shRemGet(S, f){ try { return localStorage.getItem(shRemKey(S, f)) || ''; } catch(x) { return ''; } }
 function shRemSave(S){
-  try { S.lines.forEach(function(l){ S.cfg.fields.forEach(function(f){ if(f.rem && l.f[f.id]) localStorage.setItem(shRemKey(S, f), String(l.f[f.id]).slice(0, 300)); }); }); } catch(x) {}
+  try { S.cfg.fields.forEach(function(f){ if(f.rem && S.f && S.f[f.id]) localStorage.setItem(shRemKey(S, f), String(S.f[f.id]).slice(0, 300)); }); } catch(x) {}
 }
 function shMoney(S, n){ return S.cfg.cur + ' ' + n; }
 async function shRaw(S, payload){
@@ -11771,7 +11812,7 @@ async function shPost(S, payload){
 }
 function shSetup(sec){
   var cfg = JSON.parse(sec.getAttribute('data-cfg'));
-  var S = { sec: sec, cfg: cfg, script: sec.getAttribute('data-script') || '', client: sec.getAttribute('data-client') || '', view:'gallery', lines:[], pm:{}, sk:'sb_sess_'+cfg.shop, t0: Date.now(), ref:'r'+Math.random().toString(36).slice(2)+Date.now().toString(36), msg:'', busy:false, feed:null, wa:'', order:null, status:'' };
+  var S = { sec: sec, cfg: cfg, script: sec.getAttribute('data-script') || '', client: sec.getAttribute('data-client') || '', view:'gallery', lines:[], pm:{}, sk:'sb_sess_'+cfg.shop, t0: Date.now(), ref:'r'+Math.random().toString(36).slice(2)+Date.now().toString(36), msg:'', busy:false, feed:null, wa:'', f:{}, order:null, status:'' };
   cfg.products.forEach(function(p){ S.pm[p.id] = p; });
   S.live = SBG.live && !!S.script && !!S.client;
   S.sess = shSess(S); sec._sh = S; S.mine = shMineLoad(S); S.fin = []; S.others = [];
@@ -11785,6 +11826,8 @@ function shSetup(sec){
   }
   sec.addEventListener('click', function(e){ var a = e.target.closest ? e.target.closest('[data-a]') : null; if(a) shAct(S, a); });
   sec.addEventListener('input', function(e){ var t = e.target, f = t.getAttribute && t.getAttribute('data-f'); if(f) shInput(S, t, f); });
+  sec.classList.add('sh-inview');
+  try { if(window.IntersectionObserver){ sec.classList.remove('sh-inview'); new IntersectionObserver(function(en){ en.forEach(function(x){ sec.classList.toggle('sh-inview', x.isIntersecting); }); }, { threshold: 0 }).observe(sec); } } catch(e){ sec.classList.add('sh-inview'); }
   shRender(S);
   if(cfg.feed) shFeed(S);
   if(S.mine.length || S.sess) shMineRefresh(S);
@@ -11824,7 +11867,8 @@ async function shFeed(S, quiet){
 function shInput(S, t, f){
   var p = f.split('|');
   if(p[0] === 'wa') S.wa = t.value;
-  else if(p[0] === 'l'){ var l = S.lines[+p[1]]; if(l){ if(p[2] === 'q') l.q = Math.max(1, Math.min(20, parseInt(t.value,10)||1)); else l.f[p[2]] = t.type === 'checkbox' ? (t.checked ? 'yes' : '') : t.value; if(p[2] === 'q') shTot(S); } }
+  else if(p[0] === 'f'){ S.f = S.f || {}; S.f[p[1]] = t.type === 'checkbox' ? (t.checked ? 'yes' : '') : t.value; }
+  else if(p[0] === 'l'){ var l = S.lines[+p[1]]; if(l && p[2] === 'q'){ l.q = Math.max(1, Math.min(20, parseInt(t.value,10)||1)); shTot(S); } }
   else if(p[0] === 'sid') S.sid = t.value; else if(p[0] === 'scode') S.scode = t.value;
 }
 function shTot(S){ var e = S.sec.querySelector('[data-tot]'); if(e) e.textContent = shMoney(S, shTotal(S)); }
@@ -11838,13 +11882,13 @@ function shAct(S, a){
     S.msg = '';
   }
   else if(act === 'cart'){ S.view = 'order'; S.msg = ''; }
-  else if(act === 'back'){ S.view = 'gallery'; S.msg = ''; }
+  else if(act === 'back'){ if(!S.cfg.multi) S.lines = []; S.view = 'gallery'; S.msg = ''; }
   else if(act === 'pkg'){ S.lines[i].k = a.getAttribute('data-k'); }
   else if(act === 'rm'){ S.lines.splice(i,1); if(!S.lines.length) S.view = 'gallery'; }
   else if(act === 'out'){ shSave(S, null); SBG.signOut(); }
   else if(act === 'submit'){ shSubmit(S); return; }
   else if(act === 'dl'){ shReceipt(S); return; }
-  else if(act === 'again'){ S.lines = []; S.order = null; S.view = 'gallery'; S.ref = 'r'+Math.random().toString(36).slice(2)+Date.now().toString(36); S.t0 = Date.now(); }
+  else if(act === 'again'){ S.lines = []; S.f = {}; S.order = null; S.view = 'gallery'; S.ref = 'r'+Math.random().toString(36).slice(2)+Date.now().toString(36); S.t0 = Date.now(); }
   else if(act === 'check'){ shCheck(S); return; }
   else if(act === 'mref'){ shMineRefresh(S); return; }
   else if(act === 'pw'){ var pi = a.parentNode.querySelector('input'); if(pi){ var show = pi.type === 'password'; pi.type = show ? 'text' : 'password'; a.textContent = show ? 'Hide' : 'Show'; } return; }
@@ -11852,14 +11896,16 @@ function shAct(S, a){
   shRender(S);
 }
 function shValidate(S){
+  if(!S.lines.length) return shTx(S,'empty');
   if(!S.sess) return shTx(S,'signin');
   var wa = String(S.wa||'').split(' ').join('').split('-').join('');
   if(!/^[+]?[0-9]{10,15}$/.test(wa)) return shTx(S,'wa') + ' ?';
   for(var i=0;i<S.lines.length;i++){
     var l = S.lines[i], p = S.pm[l.p];
     if((p.packages||[]).length && !shPkg(p, l.k)) return p.title + ': ' + shTx(S,'choose');
-    for(var j=0;j<S.cfg.fields.length;j++){ var f = S.cfg.fields[j]; if(f.required && !String(l.f[f.id]||'').trim()) return f.label + ' ?'; }
   }
+  S.f = S.f || {};
+  for(var j=0;j<S.cfg.fields.length;j++){ var f = S.cfg.fields[j]; if(f.required && !String(S.f[f.id]||'').trim()) return f.label + ' ?'; }
   return '';
 }
 async function shSubmit(S){
@@ -11867,7 +11913,7 @@ async function shSubmit(S){
   var m = shValidate(S); if(m){ S.msg = m; shRender(S); return; }
   S.busy = true; S.msg = ''; shRender(S);
   try {
-    var r = await shPost(S, { type:'shoporder', whatsapp:S.wa, elapsed: Date.now()-S.t0, clientRef:S.ref, hp:'', items: S.lines.map(function(l){ return { p:l.p, k:l.k, q:l.q, f:l.f }; }) });
+    var r = await shPost(S, { type:'shoporder', whatsapp:S.wa, elapsed: Date.now()-S.t0, clientRef:S.ref, hp:'', fields: S.f || {}, items: S.lines.map(function(l){ return { p:l.p, k:l.k, q:l.q, f:S.f || {} }; }) });
     if(r && r.ok && r.orderId){ shRemSave(S); shMineAdd(S, r); S.order = r; S.view = 'done'; S.busy = false; shRender(S); shReceipt(S); if(S.cfg.feed) shFeed(S); return; }
     var c = r && r.code;
     if(c === 'EXPIRED' || c === 'BAD_SESSION'){ shSave(S, null); S.msg = shTx(S,'expired'); }
@@ -11903,11 +11949,11 @@ function shReceipt(S){
     var W = 720, pad = 36, rows = [], c = document.createElement('canvas'), x = c.getContext('2d');
     if(!x) return;
     var when = o.created; try { when = new Intl.DateTimeFormat('en-GB', { timeZone:S.cfg.tz, dateStyle:'medium', timeStyle:'short' }).format(new Date(o.created)); } catch(e){}
-    rows.push(['b', S.cfg.title || 'Order'], ['t', shTx(S,'oid') + ': ' + o.orderId], ['t', when + ' (' + S.cfg.tz + ')'], ['t', '']);
+    rows.push(['b', S.cfg.title || 'Order'], ['t', shTx(S,'oid') + ': ' + o.orderId], ['t', when + ' (' + S.cfg.tz + ')']); if(S.sess && S.sess.email) rows.push(['t', (S.sess.name ? S.sess.name + ' - ' : '') + S.sess.email]); rows.push(['t', '']);
     o.items.forEach(function(i){ rows.push(['t', i.title + (i.label ? ' - ' + i.label : '') + (i.qty > 1 ? ' x' + i.qty : '') + '   ' + S.cfg.cur + ' ' + (i.price * i.qty)]); });
     rows.push(['b', shTx(S,'total') + ': ' + S.cfg.cur + ' ' + o.total], ['t', ''], ['b', shTx(S,'code') + ': ' + o.code], ['t', shTx(S,'save')]);
     if(S.cfg.pay){ rows.push(['t',''], ['b', shTx(S,'pay')]); S.cfg.pay.split(String.fromCharCode(10)).forEach(function(t){ rows.push(['t', t.split('{id}').join(o.orderId)]); }); }
-    var rules = []; S.lines.forEach(function(l){ var p = S.pm[l.p]; if(p.rules) rules.push(p.rules); });
+    var rules = [], rs2 = {}; S.lines.forEach(function(l){ var p = S.pm[l.p]; if(p.rules && !rs2[p.rules]){ rs2[p.rules] = 1; rules.push(p.rules); } });
     if(rules.length){ rows.push(['t',''], ['b', shTx(S,'rules')]); rules.join(String.fromCharCode(10)).split(String.fromCharCode(10)).forEach(function(t){ rows.push(['t', t]); }); }
     var out = [];
     rows.forEach(function(r){
@@ -11969,7 +12015,7 @@ function shRender(S){
   if(S.view === 'gallery'){
     h += shMineHTML(S, T, e);
     h += '<div class="sh-grid">' + C.products.map(function(p){
-      var inc = S.lines.some(function(l){ return l.p === p.id; });
+      var inc = !!C.multi && S.lines.some(function(l){ return l.p === p.id; });
       var mn = shMin(p), lb = p.available === false ? T('sold') : e(p.label||''), off = shOff(mn.p, mn.o);
       return '<button class="sh-card' + (inc ? ' on' : '') + '" data-a="open" data-p="' + e(p.id) + '"' + (p.available === false ? ' disabled' : '') + '><div class="sh-im">' + (p.image ? '<img src="' + e(p.image) + '" alt="">' : '<div class="sh-ph"></div>') + (lb ? '<i class="sh-lab' + (p.available === false ? ' out' : '') + '">' + lb + '</i>' : '') + (off ? '<i class="sh-disc">-' + off + '%</i>' : '') + '</div><b>' + e(p.title) + '</b>' + (p.badge ? '<small>' + e(p.badge) + '</small>' : '') + (p.desc ? '<small class="sh-cd">' + e(p.desc) + '</small>' : '') + (inc ? '<span class="sh-inc">&#10003; ' + T('incart') + '</span>' : shPr(S, mn.p, mn.o)) + '</button>';
     }).join('') + '</div>';
@@ -11981,23 +12027,27 @@ function shRender(S){
     S.lines.forEach(function(l, i){
       var p = S.pm[l.p];
       var mn = shMin(p), kk = shPkg(p, l.k), pr = kk ? kk.price : p.price, po = kk ? kk.old : p.oldPrice, lb = p.available === false ? T('sold') : e(p.label||'');
-      h += '<div class="sh-box"><div class="sh-head">' + '<div class="sh-im big">' + (p.image ? '<img src="' + e(p.image) + '" alt="">' : '<div class="sh-ph"></div>') + (lb ? '<i class="sh-lab">' + lb + '</i>' : '') + '</div><div class="sh-hi"><div class="sh-h big">' + e(p.title) + '</div>' + (p.badge ? '<small class="sh-tag">' + e(p.badge) + '</small>' : '') + '<div>' + shPr(S, pr, po) + '</div>' + (p.desc ? '<div class="sh-desc">' + e(p.desc) + '</div>' : '') + (C.multi ? '<button class="sh-link" data-a="rm" data-i="' + i + '">' + T('remove') + '</button>' : '') + '</div></div>';
+      h += '<div class="sh-box sh-line">' + (C.multi ? '<button type="button" class="sh-rm" data-a="rm" data-i="' + i + '" title="' + T('remove') + '" aria-label="' + T('remove') + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>' : '') + '<div class="sh-head">' + '<div class="sh-im big">' + (p.image ? '<img src="' + e(p.image) + '" alt="">' : '<div class="sh-ph"></div>') + (lb ? '<i class="sh-lab">' + lb + '</i>' : '') + '</div><div class="sh-hi"><div class="sh-h big">' + e(p.title) + '</div>' + (p.badge ? '<small class="sh-tag">' + e(p.badge) + '</small>' : '') + '<div>' + shPr(S, pr, po) + '</div>' + (p.desc ? '<div class="sh-desc">' + e(p.desc) + '</div>' : '') + '</div></div>';
       if(p.details) h += '<div class="sh-h2">' + T('details') + '</div><ul class="sh-rules">' + p.details.split(String.fromCharCode(10)).filter(function(t){ return t.trim(); }).map(function(t){ return '<li>' + e(t) + '</li>'; }).join('') + '</ul>';
       if(p.packages.length){ h += '<div class="sh-h2">' + T('choose') + '</div><div class="sh-pk">' + p.packages.map(function(k){ return '<button class="sh-pkb' + (l.k === k.id ? ' on' : '') + '" data-a="pkg" data-i="' + i + '" data-k="' + e(k.id) + '"><span>' + e(k.label) + '</span><b>' + shPr(S, k.price, k.old) + '</b></button>'; }).join('') + '</div>'; }
       if(p.allowQty) h += '<label class="sh-lb">' + T('qty') + '<input class="sh-in" type="number" min="1" max="20" value="' + (l.q||1) + '" data-f="l|' + i + '|q"></label>';
-      if(C.fields.length) h += '<div class="sh-h2">' + T('info') + '</div>';
-      C.fields.forEach(function(f){
-        if(!l.f[f.id] && f.rem){ var rv = shRemGet(S, f); if(rv) l.f[f.id] = rv; }
-        var v = l.f[f.id] || '', nm = 'data-f="l|' + i + '|' + e(f.id) + '"', inp;
-        if(f.type === 'longtext') inp = '<textarea class="sh-in" ' + nm + ' placeholder="' + e(f.ph) + '">' + e(v) + '</textarea>';
-        else if(f.type === 'select') inp = '<select class="sh-in" ' + nm + '><option value=""></option>' + (f.options||[]).map(function(o){ return '<option' + (o === v ? ' selected' : '') + '>' + e(o) + '</option>'; }).join('') + '</select>';
-        else if(f.type === 'checkbox') inp = '<input type="checkbox" ' + nm + (v ? ' checked' : '') + '>';
-        else if(f.type === 'password') inp = '<span class="sh-pw"><input class="sh-in" ' + nm + ' type="password" autocomplete="new-password" value="' + e(v) + '" placeholder="' + e(f.ph) + '"><button type="button" class="sh-link" data-a="pw">Show</button></span>';
-        else inp = '<input class="sh-in" ' + nm + ' type="' + (f.type === 'number' ? 'number' : 'text') + '" value="' + e(v) + '" placeholder="' + e(f.ph) + '">';
-        h += '<label class="sh-lb">' + e(f.label) + (f.required ? ' *' : '') + inp + '</label>';
-      });
       h += '</div>';
     });
+    if(S.lines.length && C.fields.length){
+      S.f = S.f || {};
+      h += '<div class="sh-box"><div class="sh-h">' + T('info') + '</div>';
+    C.fields.forEach(function(f){
+      if(!S.f[f.id] && f.rem){ var rv = shRemGet(S, f); if(rv) S.f[f.id] = rv; }
+      var v = S.f[f.id] || '', nm = 'data-f="f|' + e(f.id) + '"', inp;
+      if(f.type === 'longtext') inp = '<textarea class="sh-in" ' + nm + ' placeholder="' + e(f.ph) + '">' + e(v) + '</textarea>';
+      else if(f.type === 'select') inp = '<select class="sh-in" ' + nm + '><option value=""></option>' + (f.options||[]).map(function(o){ return '<option' + (o === v ? ' selected' : '') + '>' + e(o) + '</option>'; }).join('') + '</select>';
+      else if(f.type === 'checkbox') inp = '<input type="checkbox" ' + nm + (v ? ' checked' : '') + '>';
+      else if(f.type === 'password') inp = '<span class="sh-pw"><input class="sh-in" ' + nm + ' type="password" autocomplete="new-password" value="' + e(v) + '" placeholder="' + e(f.ph) + '"><button type="button" class="sh-link" data-a="pw">Show</button></span>';
+      else inp = '<input class="sh-in" ' + nm + ' type="' + (f.type === 'number' ? 'number' : 'text') + '" value="' + e(v) + '" placeholder="' + e(f.ph) + '">';
+      h += '<label class="sh-lb">' + e(f.label) + (f.required ? ' *' : '') + inp + '</label>';
+    });
+      h += '</div>';
+    }
     if(S.lines.length){
       h += '<div class="sh-box"><div class="sh-h">' + T('confirm') + '</div>';
       if(S.sess) h += '<div class="sh-ok">&#10003; ' + e(S.sess.email) + ' <button class="sh-link" data-a="out">' + T('notyou') + '</button></div>';
@@ -12007,7 +12057,7 @@ function shRender(S){
       h += '<div class="sh-sum tot"><span>' + T('total') + '</span><b data-tot>' + shMoney(S, shTotal(S)) + '</b></div>';
       if(S.msg) h += '<div class="sh-err">' + e(S.msg) + '</div>';
       h += '<button class="sh-btn big" data-a="submit"' + ((S.busy || !S.live) ? ' disabled' : '') + '>' + (S.busy ? '...' : T('order')) + '</button></div>';
-      var rl = S.lines.filter(function(l){ return S.pm[l.p].rules; }).map(function(l){ return S.pm[l.p].rules; }).join(String.fromCharCode(10));
+      var rseen = {}, rl = S.lines.filter(function(l){ var r = S.pm[l.p].rules; if(!r || rseen[r]) return false; rseen[r] = 1; return true; }).map(function(l){ return S.pm[l.p].rules; }).join(String.fromCharCode(10));
       if(rl) h += '<div class="sh-box"><div class="sh-h">' + T('rules') + '</div><ul class="sh-rules">' + rl.split(String.fromCharCode(10)).filter(function(t){ return t.trim(); }).map(function(t){ return '<li>' + e(t) + '</li>'; }).join('') + '</ul></div>';
     }
   } else if(S.view === 'done' && S.order){
@@ -12016,8 +12066,10 @@ function shRender(S){
     o.items.forEach(function(i){ h += '<div class="sh-sum"><span>' + e(i.title) + (i.label ? ' - ' + e(i.label) : '') + (i.qty > 1 ? ' x' + i.qty : '') + '</span><b>' + shMoney(S, i.price * i.qty) + '</b></div>'; });
     h += '<div class="sh-sum tot"><span>' + T('total') + '</span><b>' + shMoney(S, o.total) + '</b></div>';
     if(C.pay) h += '<div class="sh-h2">' + T('pay') + '</div><div class="sh-pay">' + e(C.pay.split('{id}').join(o.orderId)) + '</div>';
-    var nl = String.fromCharCode(10), ilines = (o.items || []).map(function(i){ return i.title + (i.label ? ' - ' + i.label : '') + (i.qty > 1 ? ' x' + i.qty : ''); });
-    var msg = encodeURIComponent((C.title || 'Order') + ' ' + o.orderId + nl + ilines.join(nl) + nl + shTx(S,'total') + ': ' + shMoney(S, o.total));
+    var nl = String.fromCharCode(10), ilines = (o.items || []).map(function(i){ return '- ' + i.title + (i.label ? ' - ' + i.label : '') + (i.qty > 1 ? ' x' + i.qty : '') + ' = ' + shMoney(S, i.price * i.qty); });
+    var who = []; if(S.sess && S.sess.name) who.push('Name: ' + S.sess.name); if(S.sess && S.sess.email) who.push('Email: ' + S.sess.email);
+    (C.fields || []).forEach(function(f){ var v = (S.f || {})[f.id]; if(v && f.type !== 'password') who.push(f.label + ': ' + v); });
+    var msg = encodeURIComponent((C.title || 'Order') + ' ' + o.orderId + nl + who.join(nl) + (who.length ? nl : '') + ilines.join(nl) + nl + shTx(S,'total') + ': ' + shMoney(S, o.total));
     var wn = String(C.wa||'').split('+').join('').split(' ').join('').split('-').join('');
     h += '<div class="sh-row">' + (wn ? '<a class="sh-btn" target="_blank" rel="noopener" href="https://wa.me/' + e(wn) + '?text=' + msg + '">' + T('wasend') + '</a><a class="sh-btn alt" href="sms:' + e(C.wa) + '?body=' + msg + '">' + T('sms') + '</a>' : '') + '<button class="sh-btn alt" data-a="dl">' + T('dl') + '</button><button class="sh-btn alt" data-a="again">' + T('again') + '</button></div></div>';
   }
