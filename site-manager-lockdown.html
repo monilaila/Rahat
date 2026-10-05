@@ -229,9 +229,12 @@ input[type=color]{width:32px;height:32px;padding:1px;border-radius:5px;border:1p
 .preview-panel iframe{flex:1;border:none;display:block;width:100%;}
 /* SPLIT DRAG HANDLE */
 .split-handle{width:0;flex-shrink:0;cursor:col-resize;position:relative;z-index:20;display:none;user-select:none;}
-.split-handle::after{content:'';position:absolute;inset:0 -3px;background:transparent;transition:background .15s;}
+.split-handle::after{content:'';position:absolute;inset:0;background:transparent;transition:background .15s;}
 .split-handle:hover::after,.split-handle.dragging::after{background:var(--acc);opacity:.5;}
-.split-handle.visible{display:block;width:6px;}
+.split-handle.visible{display:block;width:6px;margin-left:8px;}
+body.split-on .rpanel::-webkit-scrollbar{width:10px}
+body.split-on .rpanel::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:5px}
+body.split-on .rpanel{scrollbar-width:auto;scrollbar-color:var(--bdr2) transparent}
 .pvw-toolbar{height:34px;background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 .75rem;gap:6px;flex-shrink:0;}
 .pvw-label{font-size:11px;color:var(--txt3);flex:1;}
 .full-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;flex-direction:column;}
@@ -1890,6 +1893,8 @@ async function ghSyncProject(force) {
   const gh = S.meta.github;
   if(!gh || !gh.token) { ghOpenConnectModal(); return; }
   try { sbSyncActivePage(); } catch(e) {}
+  const _mp = sbgMailProblems();
+  if(_mp.length) { alert('Cannot publish yet. The Order email is switched on in a shop block, but:\n\n- ' + _mp.join('\n- ') + '\n\nFix this in the Shop block (Payment and contact, and Order email), or switch Order email off.'); return; }
   const _badCid = sbgCidAudit();
   if(_badCid.length) {
     const lbl = _badCid.slice(0, 4).map(b => ((DEFS[b.type] || {}).label || b.type)).join(', ');
@@ -2731,7 +2736,7 @@ const DEFAULT_DATA = {
   adslot: { placement:'floating', side:'left', testMode:true, adCode:'', width:160, height:600, label:'Advertisement', stickyOnScroll:true, floatingDelaySeconds:5, floatingRepeatSeconds:120, floatingMaxShows:3, railRepeatSeconds:120, railMaxShows:3, slideDelaySeconds:5, slideAutoHideSeconds:0, slideRepeatSeconds:90, slideMaxShows:3, anchorDelaySeconds:5, anchorRepeatSeconds:120, anchorMaxShows:3, popupStyle:'manual', popupDelaySeconds:5, popupCountdownSeconds:10, popupRepeatSeconds:60, popupMaxShows:3, popupWidth:300, popupHeight:250 },
   gridcard: { title:'', items:[{ src:'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=900&q=80', date:'Jan 2026', title:'Card Title', description:'Short description text.' },{ src:'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=900&q=80', date:'Feb 2026', title:'Card Title', description:'Short description text.' },{ src:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=900&q=80', date:'Mar 2026', title:'Card Title', description:'Short description text.' }] },
   formblock: { title:'Contact Us', subtitle:'Fill out the form below and we\'ll get back to you.', scriptUrl:'', sheetName:'Sheet1', steps:[{ id:'step1', title:'Your Information', fields:[{ id:'f1', type:'text', label:'Full Name', placeholder:'Enter your name', required:true, width:'full' },{ id:'f2', type:'text', label:'Email Address', placeholder:'your@email.com', required:true, width:'full' }] }], settings:{ submitText:'Submit', successMessage:'Thank you! Your submission has been received.', successRedirect:'', showProgress:true, collectDeviceInfo:false, deviceConsentText:'I agree to share my device information for analytics purposes.', antiSpam:true, submissionLimit:1 }, uniqueFields:[] },
-  shopblock: { title:'Shop', currency:'৳', mode:'one', whatsapp:'', payment:'Send the money to: 01XXXXXXXXX (bKash)\nReference: {id}', showRecent:true, clientId:'', scriptUrl:'', tabPrefix:'Shop', shopId:'', timezone:'Asia/Dhaka', retentionDays:7,
+  shopblock: { email:{ on:true, shopName:'', pay:[{ label:'bKash', number:'' }], replyTo:'', extra:'', subject:'', lang:'en' }, title:'Shop', currency:'৳', mode:'one', whatsapp:'', payment:'Send the money to: 01XXXXXXXXX (bKash)\nReference: {id}', showRecent:true, clientId:'', scriptUrl:'', tabPrefix:'Shop', shopId:'', timezone:'Asia/Dhaka', retentionDays:7,
     products:[{ id:'p_demo01', title:'Sample product', image:'', badge:'', desc:'', price:0, allowQty:false, available:true, rules:'', label:'New', details:'Delivered within minutes\nWorks on all servers', oldPrice:0, packages:[{ id:'k_demo01', label:'Small', price:22, old:30 },{ id:'k_demo02', label:'Large', price:44, old:0 }] }],
     fields:[{ id:'f_demo01', label:'Player ID', type:'text', required:true, ph:'', options:'' }],
     texts:{"choose": "1. Choose package", "info": "2. Account info", "confirm": "3. Confirm", "wa": "WhatsApp number", "total": "Total", "order": "Place order", "rules": "Rules and Conditions", "recent": "Recent Orders", "done": "Order placed!", "check": "Check order status"} },
@@ -2917,11 +2922,13 @@ var SB_ADV = {
 };
 var _sbAdv = {};
 function sbGroupAdvanced(b){
+  document.querySelectorAll('#rpanel details[data-advkey]').forEach(dt => dt.addEventListener('toggle', () => { _sbAdv[dt.dataset.advkey] = dt.open; }));
   const re = SB_ADV[b.type]; if(!re) return;
   const ep = document.querySelector('#rpanel .ep'); if(!ep) return;
   const kids = Array.from(ep.children), moved = []; let cur = false;
   kids.forEach(k => {
     if(k.classList.contains('ep-head')) return;
+    if(k.matches && k.matches('details[data-advkey]')) { cur = false; return; }
     if(k.classList.contains('ep-section')) cur = re.test((k.textContent||'').trim());
     if(cur) moved.push(k);
   });
@@ -3764,7 +3771,10 @@ const SBG_GS_TEMPLATE = String.raw`// ══════════════
 // 4. Deploy → New deployment → type "Web app"
 //    Execute as: Me      Who has access: Anyone
 // 5. Copy the Web app URL (ends in /exec) into Site Builder
-// TO UPDATE LATER: paste this file again, then
+// ORDER EMAILS are sent from the Google account that runs this script. A free
+//    Gmail account can send about 100 per day. Orders over the limit are still
+//    saved; their email is marked Skipped in the Mail tab and is not retried.
+// TO UPDATE LATER: paste this file again, run "authorize" again, then
 //    Deploy → Manage deployments → pencil → Version: New version → Deploy
 //    (the URL stays the same)
 // ═══════════════════════════════════════════════════════════════
@@ -4297,6 +4307,7 @@ function shopOrder_(b) {
     return { ok: true, orderId: id, code: code, created: now.toISOString(), items: items.map(function (i) { return { title: i.t, label: i.l, qty: i.q, price: i.u }; }), total: total, currency: sh.currency || '' };
   });
   try { cache.put(ik, JSON.stringify(res), 600); } catch (x) {}
+  try { shopMail_(sh, { id: res.orderId, code: res.code, name: u.name, email: u.email, items: text, total: total, currency: sh.currency || '' }); } catch (x) { Logger.log('mail: ' + x); }
   lazyClean_(sh);
   return res;
 }
@@ -4410,6 +4421,107 @@ function shPruneClosed_(sh, keep) {
 }
 
 // ─── Cleanup (daily trigger + lazy) ─────────────────────────────
+// --- Order confirmation email (v26) ------------------------------
+// One attempt per order. If the email cannot be sent it is marked Skipped in the
+// Mail tab and is never retried, so it can never use up the daily quota twice.
+var SH_MH = ['Order ID', 'Created', 'Email', 'Status', 'Sent At', 'Reason'];
+var MAIL_TEXT = {
+  en: {
+    hi: 'Hi {name},', hiNo: 'Hi there,', thanks: 'Thank you for your order!', recv: 'Your order at {shop} has been received.',
+    code: 'Order code', track: 'Tracking code', items: 'Items', total: 'Total to pay', payTo: 'Pay to',
+    copy: 'Tap and hold the number to copy it',
+    after: 'After you pay, tap the button and send us ONLY the phone number you paid from:',
+    afterPlain: 'After you pay, send us ONLY the phone number you paid from, on WhatsApp:',
+    btn: 'Send payment number for {id} on WhatsApp', fb: 'If the button does not work, message us on WhatsApp:',
+    tail: 'Order {id} for {amount}.', plainPay: 'Please send your payment{method} to this number:',
+    subject: 'Your order {orderId} - payment details', wa: 'Order {id} - I paid from this number: '
+  },
+  bn: {
+    hi: 'হ্যালো {name},', hiNo: 'হ্যালো,', thanks: 'আপনার অর্ডারের জন্য ধন্যবাদ!', recv: '{shop}-এ আপনার অর্ডারটি গ্রহণ করা হয়েছে।',
+    code: 'অর্ডার কোড', track: 'ট্র্যাকিং কোড', items: 'পণ্য', total: 'মোট পরিশোধযোগ্য', payTo: 'টাকা পাঠান',
+    copy: 'নম্বরটি কপি করতে চেপে ধরে রাখুন',
+    after: 'পেমেন্ট করার পর বাটনে চাপ দিয়ে, আপনি যে নম্বর থেকে টাকা পাঠিয়েছেন শুধু সেই ফোন নম্বরটি আমাদের পাঠান:',
+    afterPlain: 'পেমেন্ট করার পর, আপনি যে নম্বর থেকে টাকা পাঠিয়েছেন শুধু সেই ফোন নম্বরটি হোয়াটসঅ্যাপে আমাদের পাঠান:',
+    btn: '{id}-এর পেমেন্ট নম্বর হোয়াটসঅ্যাপে পাঠান', fb: 'বাটন কাজ না করলে হোয়াটসঅ্যাপে মেসেজ করুন:',
+    tail: 'অর্ডার {id}, মোট {amount}।', plainPay: 'অনুগ্রহ করে{method} এই নম্বরে টাকা পাঠান:',
+    subject: 'আপনার অর্ডার {orderId} - পেমেন্টের তথ্য', wa: 'অর্ডার {id} - আমি এই নম্বর থেকে পেমেন্ট করেছি: '
+  }
+};
+function mailEsc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function mailFill_(s, map) { var out = String(s); Object.keys(map).forEach(function (k) { out = out.split('{' + k + '}').join(map[k]); }); return out; }
+function mailRow_(label, value) {
+  return '<tr><td style="padding:8px;border:1px solid #ddd;background:#f6f6f6;width:35%;vertical-align:top">' + label +
+    '</td><td style="padding:8px;border:1px solid #ddd">' + value + '</td></tr>';
+}
+function mailBuild_(sh, o) {
+  var m = sh.email, T = MAIL_TEXT[m.lang] || MAIL_TEXT.en, cur = o.currency || '';
+  var amount = cur + (Math.round(Number(o.total) * 100) / 100);
+  var wa = String(m.whatsapp || '').replace(/\D/g, '');
+  var shop = m.shopName || 'Our shop';
+  var waLink = 'https://wa.me/' + wa + '?text=' + encodeURIComponent(mailFill_(T.wa, { id: o.id }));
+  var pays = (m.pay || []).filter(function (p) { return p && String(p.number || '').trim(); }).slice(0, 3);
+  var subject = String(mailFill_(m.subject || T.subject, { orderId: o.id, shop: shop })).replace(/[\r\n]+/g, ' ').slice(0, 150);
+  var greet = o.name ? mailFill_(T.hi, { name: String(o.name).replace(/[\r\n]+/g, ' ').slice(0, 60) }) : T.hiNo;
+
+  var plain = greet + '\n\n' + T.thanks + '\n\n' + T.code + ': ' + o.id + '\n' + (o.code ? T.track + ': ' + o.code + '\n' : '') +
+    T.items + ':\n' + o.items + '\n' + T.total + ': ' + amount + '\n\n';
+  pays.forEach(function (p) {
+    plain += mailFill_(T.plainPay, { method: p.label ? ' (' + p.label + ')' : '' }) + '\n\n' + p.number + '\n\n';
+  });
+  if (m.extra) plain += m.extra + '\n\n';
+  plain += T.afterPlain + '\n' + waLink + '\n\n' + mailFill_(T.tail, { id: o.id, amount: amount }) + '\n';
+
+  var payRows = pays.map(function (p) {
+    return mailRow_(mailEsc_(T.payTo) + (p.label ? ' (' + mailEsc_(p.label) + ')' : ''),
+      '<span style="display:inline-block;background:#fff3cd;border:1px dashed #d4a017;border-radius:6px;padding:8px 14px;font-size:20px;font-weight:bold;letter-spacing:1px;font-family:Consolas,monospace;-webkit-user-select:all;user-select:all">' +
+      mailEsc_(p.number) + '</span><div style="font-size:12px;color:#777;margin-top:4px">' + mailEsc_(T.copy) + '</div>');
+  }).join('');
+  var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:auto;color:#222;line-height:1.5">' +
+    '<h2 style="margin:0 0 8px">' + mailEsc_(T.thanks) + '</h2>' +
+    '<p>' + mailEsc_(greet) + ' ' + mailEsc_(mailFill_(T.recv, { shop: shop })) + '</p>' +
+    '<table style="width:100%;border-collapse:collapse;margin:12px 0">' +
+    mailRow_(mailEsc_(T.code), '<b>' + mailEsc_(o.id) + '</b>') +
+    (o.code ? mailRow_(mailEsc_(T.track), '<b>' + mailEsc_(o.code) + '</b>') : '') +
+    mailRow_(mailEsc_(T.items), mailEsc_(o.items).replace(/\n/g, '<br>')) +
+    mailRow_(mailEsc_(T.total), '<b>' + mailEsc_(amount) + '</b>') + payRows + '</table>' +
+    (m.extra ? '<p>' + mailEsc_(m.extra).replace(/\n/g, '<br>') + '</p>' : '') +
+    '<p>' + mailEsc_(T.after) + '</p>' +
+    '<p><a href="' + waLink + '" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:bold">' +
+    mailEsc_(mailFill_(T.btn, { id: o.id })) + '</a></p>' +
+    '<p style="color:#777;font-size:12px">' + mailEsc_(mailFill_(T.tail, { id: o.id, amount: amount })) + ' ' + mailEsc_(T.fb) + ' ' + mailEsc_(wa) + '</p></div>';
+  return { subject: subject, plain: plain, html: html, name: shop, replyTo: m.replyTo || '' };
+}
+function mailSend_(to, msg) {
+  var opt = { to: to, subject: msg.subject, body: msg.plain, htmlBody: msg.html, name: msg.name };
+  if (msg.replyTo && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(msg.replyTo)) opt.replyTo = msg.replyTo;
+  MailApp.sendEmail(opt);
+}
+function shopMail_(sh, o) {
+  var m = sh.email;
+  if (!m || !m.on) return;
+  var status = 'Skipped', reason = '', sentAt = '';
+  try {
+    var pays = (m.pay || []).filter(function (p) { return p && String(p.number || '').trim(); });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(o.email || ''))) reason = 'Invalid email address';
+    else if (!pays.length || !String(m.whatsapp || '').replace(/\D/g, '')) reason = 'Order email is not fully set up';
+    else if (MailApp.getRemainingDailyQuota() < 1) reason = 'Daily email limit reached';
+    else {
+      var msg = mailBuild_(sh, o);
+      try { mailSend_(o.email, msg); status = 'Sent'; sentAt = new Date(); }
+      catch (e1) {
+        var t1 = String(e1 && e1.message || e1);
+        if (/too many times|quota|limit exceeded/i.test(t1)) reason = 'Daily email limit reached';
+        else {
+          Utilities.sleep(1500);
+          try { mailSend_(o.email, msg); status = 'Sent'; sentAt = new Date(); }
+          catch (e2) { reason = 'Gmail error: ' + String(e2 && e2.message || e2).slice(0, 120); }
+        }
+      }
+    }
+  } catch (e) { reason = 'Error: ' + String(e && e.message || e).slice(0, 120); }
+  try { getSheet_(sh.tabs.mail, SH_MH).appendRow([cell_(o.id), new Date(), cell_(o.email), status, sentAt, cell_(reason)]); } catch (x) { Logger.log('mail log: ' + x); }
+}
+
 function shopCleanup_(sh) {
   var cut = Date.now() - (sh.retentionDays || 7) * 86400000, os = getSheet_(sh.tabs.orders, SH_OH), n = os.getLastRow(), cnt = 0, now = new Date();
   if (n >= 2) {
@@ -4429,6 +4541,15 @@ function shopCleanup_(sh) {
   }
   var fs = getSheet_(sh.tabs.feed, SH_FH), fl = fs.getLastRow(), cap = sh.feedCap || 100;
   if (fl - 1 > cap) fs.deleteRows(2, fl - 1 - cap);
+  try {
+    if (sh.tabs.mail) {
+      var ms = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sh.tabs.mail);
+      if (ms && ms.getLastRow() >= 2) {
+        var mv = ms.getRange(2, 2, ms.getLastRow() - 1, 1).getValues();
+        for (var q = mv.length - 1; q >= 0; q--) if (mv[q][0] && new Date(mv[q][0]).getTime() < cut) ms.deleteRows(q + 2, 1);
+      }
+    }
+  } catch (x) {}
   return cnt;
 }
 function lazyClean_(sh) {
@@ -4456,7 +4577,7 @@ function setupTrigger() {
 // Nothing here is secret: the Client ID and the /exec URL are public by design,
 // and all real protection happens inside the Apps Script.
 // ═══════════════════════════════════════════════════════════════════
-const SBG_VERSION = '25.0';
+const SBG_VERSION = '26.0';
 const SBG_STEPS = [
   { n:1, t:'Turn on 2-Step Verification', d:'Google Cloud blocks access unless the Google account has 2-Step Verification on. Do this in your Google Account → Security.' },
   { n:2, t:'Create a Google Cloud project and consent screen', d:'In Google Cloud Console create a project, then open Google Auth Platform and set it up: Audience = External, add an app name and a contact email.' },
@@ -4584,6 +4705,33 @@ function sbgCollisions() {
   return out;
 }
 // ── Config (what the script is driven by) ───────────────────────────
+function shEmailCfg(d, P, so) {
+  const e = d.email; if(!e || !e.on) return so;
+  const pay = (e.pay || []).map(x => ({ label: String(x.label || '').trim().slice(0, 30), number: String(x.number || '').replace(/[\s\-()]/g, '').slice(0, 20) })).filter(x => x.number).slice(0, 3);
+  so.tabs.mail = P + '_Mail';
+  so.email = { on: true, shopName: String(e.shopName || d.title || 'Our shop').trim().slice(0, 60), pay, whatsapp: String(d.whatsapp || '').replace(/\D/g, ''), replyTo: String(e.replyTo || '').trim(), extra: String(e.extra || '').slice(0, 300), subject: String(e.subject || '').slice(0, 120), lang: e.lang === 'bn' ? 'bn' : 'en' };
+  return so;
+}
+function shEmailEnsure(d) {
+  if(!d.email || typeof d.email !== 'object') d.email = { on:false, shopName:'', pay:[{ label:'bKash', number:'' }], replyTo:'', extra:'', subject:'', lang:'en' };
+  if(!Array.isArray(d.email.pay) || !d.email.pay.length) d.email.pay = [{ label:'bKash', number:'' }];
+  return d.email;
+}
+function shEmailProblems(d) {
+  const e = d && d.email, out = []; if(!e || !e.on) return out;
+  const pay = (e.pay || []).filter(x => String(x.number || '').trim());
+  if(!pay.length) out.push('Enter your payment number (for example 01712345678).');
+  pay.forEach(x => { if(!/^\+?[0-9]{6,15}$/.test(String(x.number).replace(/[\s\-()]/g, ''))) out.push('The payment number "' + x.number + '" does not look right. Use digits only.'); });
+  const wa = String(d.whatsapp || '').replace(/[\s\-+()]/g, '');
+  if(!/^[0-9]{10,15}$/.test(wa)) out.push('Enter your WhatsApp number with the country code, digits only (for example 8801712345678).');
+  if(e.replyTo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(e.replyTo).trim())) out.push('The reply-to email does not look right.');
+  return out;
+}
+function sbgMailProblems() {
+  const out = [];
+  sbgAllBlocks().filter(b => b.type === 'shopblock').forEach(b => shEmailProblems(b.data).forEach(m => out.push(m)));
+  return out;
+}
 function sbgBuildConfig(groupKey) {
   const g = sbgG();
   const blocks = sbgAllBlocks().filter(b => sbgEff(b.data).scriptUrl === groupKey);
@@ -4610,7 +4758,7 @@ function sbgBuildConfig(groupKey) {
       if(!d.shopId) d.shopId = shRid('s_');
       if(seen['shop|'+d.shopId]) return; seen['shop|'+d.shopId] = 1;
       const P = String(d.tabPrefix||'Shop').trim() || 'Shop';
-      shops.push({ id:d.shopId, tabs:{ orders:P+'_Orders', feed:P+'_Feed', stats:P+'_Stats', receipts:P+'_Receipts' }, currency:String(d.currency||'৳'), multi:d.mode==='multi', photos:d.photos!==false, cooldownSec:15, retentionDays:Math.max(1,parseInt(d.retentionDays)||7), feedCap:100, fields:shCfgFields(d).map(f => ({ id:f.id, label:f.label, type:f.type, required:f.required, max:f.max, options:f.options })), products:shCfgProducts(d).map(x => ({ id:x.id, title:x.title, available:x.available, allowQty:x.allowQty, price:x.price, packages:x.packages })) });
+      shops.push(shEmailCfg(d, P, { id:d.shopId, tabs:{ orders:P+'_Orders', feed:P+'_Feed', stats:P+'_Stats', receipts:P+'_Receipts' }, currency:String(d.currency||'৳'), multi:d.mode==='multi', photos:d.photos!==false, cooldownSec:15, retentionDays:Math.max(1,parseInt(d.retentionDays)||7), feedCap:100, fields:shCfgFields(d).map(f => ({ id:f.id, label:f.label, type:f.type, required:f.required, max:f.max, options:f.options })), products:shCfgProducts(d).map(x => ({ id:x.id, title:x.title, available:x.available, allowQty:x.allowQty, price:x.price, packages:x.packages })) }));
     } else {
       const tab = sbgReviewTab(d);
       if(!tab || seen['review|'+tab]) return; seen['review|'+tab] = 1;
@@ -4861,13 +5009,14 @@ function sbgPanelHTML(id, kind) {
 }
 // Updates the dynamic bits of every visible panel without re-rendering (keeps typing focus).
 function sbgScriptKey(url) { return String(url || 'default'); }
-function sbgScriptHash(url) { try { return sbgHash(JSON.stringify(sbgBuildConfig(url))); } catch(e) { return ''; } }
+function sbgScriptHash(url) { try { return sbgHash(SBG_VERSION + JSON.stringify(sbgBuildConfig(url))); } catch(e) { return ''; } }
 function sbgScriptStale(url) {
   const h = sbgScriptHash(url); if(!h) return false;
   const seen = sbgG().scriptSeen || {};
   return seen[sbgScriptKey(url)] !== h;
 }
 function sbgRefreshPanels() {
+  try { document.querySelectorAll('[data-shbanner]').forEach(el => shRefresh(el.getAttribute('data-shbanner'))); } catch(e) {}
   document.querySelectorAll('[data-sbg-panel]').forEach(p => {
     const id = p.getAttribute('data-sbg-panel');
     const b = S.blocks.find(x => x.id === id); if(!b) return;
@@ -5042,6 +5191,8 @@ function shOp(id, op, i, j) {
   if(op==='delK') d.products[i].packages.splice(j, 1);
   if(op==='addF') d.fields.push({ id:shRid('f_'), label:'', type:'text', required:true, ph:'', options:'' });
   if(op==='delF') d.fields.splice(i, 1);
+  if(op==='addPay') { shEmailEnsure(d); if(d.email.pay.length < 3) d.email.pay.push({ label:'', number:'' }); }
+  if(op==='delPay') { shEmailEnsure(d); if(d.email.pay.length > 1) d.email.pay.splice(i, 1); }
   updateField(id, 'shopRev', Date.now()); renderEditor(); schedulePreview();
 }
 window._shScript = window._shScript || {};
@@ -5188,9 +5339,10 @@ function shDashHTML(id, d) {
 }
 function shHash(d) { const o = JSON.stringify([d.currency, d.mode, d.tabPrefix, d.retentionDays, shCfgFields(d).map(f => [f.id,f.label,f.type,f.required,f.options]), shCfgProducts(d).map(p => [p.id,p.title,p.available,p.allowQty,p.price,p.packages.map(k => [k.id,k.label,k.price])])]); let h = 0; for(let i = 0; i < o.length; i++) h = (h * 31 + o.charCodeAt(i)) | 0; return String(h); }
 function shBannerHTML(d) {
-  if(!d.scriptSeen) return '<b>Script not copied yet.</b> Open the setup steps below and copy the script into your Google Sheet before going live.';
-  if(d.scriptSeen !== shHash(d)) return '<b>You changed products, prices or fields after you copied the script.</b> Your shop will keep charging the OLD prices until you open <b>Show script</b>, copy it again into Apps Script (replace everything), save, and Deploy a <b>New version</b>.';
-  return '';
+  const eff = sbgEff(d);
+  if(!sbgScriptStale(eff.scriptUrl)) return '';
+  const seen = (sbgG().scriptSeen || {})[sbgScriptKey(eff.scriptUrl)];
+  return '<b>The Apps Script needs updating.</b> ' + (seen ? 'Something changed that the script depends on (products, prices, fields, email settings or other block settings). ' : 'This version of the script has not been copied yet. ') + 'Open <b>Show script</b>, copy it into Apps Script (replace everything), save, run <b>authorize</b> if asked, then Deploy &gt; Manage deployments &gt; pencil &gt; <b>New version</b>. Until then your live shop keeps using the old script.';
 }
 function shRefresh(id) {
   const b = S.blocks.find(x => x.id === id); if(!b || b.type !== 'shopblock') return;
@@ -5234,9 +5386,10 @@ function renderShopBlockEditor(id, d) {
     return `<div data-shf="${id}" data-i="${i}" style="border:1px solid ${pr?'#ef4444':'var(--bdr)'};border-radius:8px;padding:10px;margin:8px 0">
     ${fi(id, 'fields.'+i+'.label', 'Label (shown to the customer)', f.label)}
     <div data-sherr style="color:#ef4444;font-size:12px;margin:-4px 0 6px;display:${pr?'block':'none'}">${pr?eH(pr.t):''}</div>
-    ${ssel('fields.'+i+'.type', 'Type', f.type, [['text','Text'],['longtext','Long text'],['number','Number'],['phone','Phone'],['email','Email'],['select','Select'],['checkbox','Checkbox']])}
+    ${ssel('fields.'+i+'.type', 'Type', f.type, [['text','Text'],['password','Password (hidden characters)'],['longtext','Long text'],['number','Number'],['phone','Phone'],['email','Email'],['select','Select'],['checkbox','Checkbox']])}
     ${f.type==='select' ? fi(id, 'fields.'+i+'.options', 'Options (comma separated)', f.options) : ''}
     ${fi(id, 'fields.'+i+'.ph', 'Placeholder', f.ph)}${sck('fields.'+i+'.required', 'Required', !!f.required)}
+    ${f.type==='password' ? '<div class="fg-hint">Passwords are hidden while typing and are never remembered on the customer device. They are saved in your Google Sheet with the order.</div>' : (f.type==='checkbox' ? '' : sck('fields.'+i+'.remember', 'Remember this answer on the customer device and suggest it next time', !!f.remember))}
     <div class="fg-hint">Internal ID: ${eH(f.id)} (permanent, never changes when you rename)</div>${btn('Delete field', `shOp('${id}','delF',${i})`)}</div>`; }).join('');
   const ck = (n, t) => `<label style="display:flex;gap:8px;font-size:12px;margin:6px 0;line-height:1.5"><input type="checkbox" ${(d.checks||{})[n]?'checked':''} onchange="updateField('${id}','checks.${n}',this.checked)"> <span>${t}</span></label>`;
   const bh = shBannerHTML(d);
@@ -5247,6 +5400,7 @@ function renderShopBlockEditor(id, d) {
   ${sck('showRecent','Show Recent Orders panel',d.showRecent!==false)}
   ${sck('photos','Show customers\' Google profile photos in Recent Orders (public)',d.photos!==false)}
   ${sec('Payment and contact')}${fi(id,'whatsapp','Seller WhatsApp number (international, e.g. 8801XXXXXXXXX)',d.whatsapp)}
+  ${shPayHTML(id, d)}
   ${ft(id,'payment','Payment instructions (use {id} where the order ID goes)',d.payment||'')}
   ${sec('Products')}${prods}${btn('+ Add product', `shOp('${id}','addP')`)}
   ${sec('Customer fields (asked for every product)')}<div class="fg-hint">WhatsApp and the verified email are always asked. Do not add them here.</div>${flds}${btn('+ Add field', `shOp('${id}','addF')`)}
@@ -5263,9 +5417,32 @@ function renderShopBlockEditor(id, d) {
   ${ck('deploy','Deployed a <b>New version</b> of the same web app')}
   ${ck('pay','Payment instructions and WhatsApp number filled in')}
   ${ck('dash','Dashboard downloaded, uploaded to GitHub Pages, its address added to Authorized JavaScript origins, signed in once')}
-  ${ck('test','Published the site, signed in with Google and placed a test order. It appears in the Sheet tab ' + eH((d.tabPrefix||'Shop')+'_Orders'))}`;
+  ${ck('test','Published the site, signed in with Google and placed a test order. It appears in the Sheet tab ' + eH((d.tabPrefix||'Shop')+'_Orders'))}
+  ${shEmailHTML(id, d, sck, ssel)}`;
 }
-function shCfgFields(d) { return (d.fields||[]).map(f => ({ id:f.id, label:String(f.label||''), type:f.type||'text', required:!!f.required, max:300, ph:f.ph||'', options:String(f.options||'').split(',').map(x => x.trim()).filter(Boolean) })); }
+function shPayIn(id, key, label, val, ph, w) {
+  return '<div class="fg" style="' + (w || 'flex:1') + '"><label class="fg-label">' + label + '</label><input class="fi" data-id="' + id + '" data-key="' + key + '" value="' + eH(val || '') + '" placeholder="' + eH(ph) + '"></div>';
+}
+function shPayHTML(id, d) {
+  const e = shEmailEnsure(d);
+  const rows = e.pay.map((x, i) => '<div style="display:flex;gap:8px;align-items:flex-start">' + shPayIn(id, 'email.pay.' + i + '.label', i === 0 ? 'Payment method' : 'Method', x.label, i === 0 ? 'bKash' : 'Nagad', 'flex:0 0 34%') + shPayIn(id, 'email.pay.' + i + '.number', i === 0 ? 'Number customers pay to' : 'Number', x.number, '01712345678') + (i > 0 ? '<button class="btn btn-sm" type="button" title="Remove" onclick="shOp(\'' + id + '\',\'delPay\',' + i + ')" style="flex:none;margin-top:1.55rem;height:34px;width:34px;padding:0">&#10005;</button>' : '<span style="flex:none;width:34px"></span>') + '</div>').join('');
+  return '<div class="fg-hint" style="margin:6px 0">Write the number exactly as customers type it: 11 digits starting with 0, no spaces and no +88 (example: 01712345678). It is shown in the order email.</div>' + rows +
+    (e.pay.length < 3 ? '<button class="btn btn-sm" type="button" onclick="shOp(\'' + id + '\',\'addPay\')" style="margin:4px 0 8px">+ Add another payment number</button>' : '');
+}
+function shEmailHTML(id, d, sck, ssel) {
+  const e = shEmailEnsure(d), pr = shEmailProblems(d), open = (typeof _sbAdv !== 'undefined' && _sbAdv['shop-email']) ? ' open' : '';
+  return '<details class="adv-box" data-advkey="shop-email"' + open + '><summary>Order email <small>' + (e.on ? 'on' : 'off') + '</small></summary>' +
+    sck('email.on', 'Send an order confirmation email to the customer', !!e.on) +
+    '<div class="fg-hint" style="margin:0 0 10px">Emails are sent from the Google account that owns the sheet. A free Gmail account can send about 100 order emails per day. After that, orders are still saved but the email is skipped and not sent later.</div>' +
+    '<div data-shemailprob="' + id + '" style="display:' + (pr.length ? 'block' : 'none') + ';color:#ef4444;font-size:12px;margin-bottom:10px">' + pr.map(eH).join('<br>') + '</div>' +
+    fi(id, 'email.shopName', 'Shop name in the email (leave empty to use the shop title)', e.shopName) +
+    fi(id, 'email.replyTo', 'Reply-to email (optional, default is your Gmail)', e.replyTo) +
+    ssel('email.lang', 'Email language', e.lang === 'bn' ? 'bn' : 'en', [['en', 'English'], ['bn', 'Bangla']]) +
+    ft(id, 'email.extra', 'Extra message under the order table (optional, max 300 characters)', e.extra || '') +
+    fi(id, 'email.subject', 'Subject (optional). You can use {orderId} and {shop}', e.subject, 'Your order {orderId} - payment details') +
+    '<div class="fg-hint">The email shows the order code, items and total, your payment number(s), and a WhatsApp button to send the number they paid from. It never includes the customer form fields.</div></details>';
+}
+function shCfgFields(d) { return (d.fields||[]).map(f => ({ id:f.id, label:String(f.label||''), type:f.type||'text', required:!!f.required, rem:!!f.remember && f.type!=='password' && f.type!=='checkbox', max:300, ph:f.ph||'', options:String(f.options||'').split(',').map(x => x.trim()).filter(Boolean) })); }
 function shCfgProducts(d) { return (d.products||[]).map(p => ({ id:p.id, title:String(p.title||''), image:p.image||'', badge:p.badge||'', desc:p.desc||'', rules:p.rules||'', details:p.details||'', label:p.label||'', oldPrice:Number(p.oldPrice)||0, available:p.available!==false, allowQty:!!p.allowQty, price:Number(p.price)||0, packages:(p.packages||[]).map(k => ({ id:k.id, label:String(k.label||''), price:Number(k.price)||0, old:Number(k.old)||0 })) })); }
 function sbgFormVerifyHTML(id, d) {
   const emails = sbgFormEmailFields(d);
@@ -8355,6 +8532,7 @@ function updateField(id, key, val) {
   updateBlockListPreview(id);
   schedulePreview();
   schedulePushHistory();
+  if(b.type === 'shopblock' || b.type === 'reviewblock' || b.type === 'formblock') { try { sbgRefreshPanels(); } catch(e) {} }
 }
 function updateArrItem(id, arrKey, idx, subKey, val) {
   const b = S.blocks.find(x => x.id === id);
@@ -9937,10 +10115,12 @@ ${customFontTag}
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--txt);font-family:var(--font-body);font-size:16px;line-height:1.75;}
-::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
-::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px;}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--txt3);}
+html{color-scheme:dark;scrollbar-width:thin;scrollbar-color:var(--bdr2) var(--bg);}
+html[data-theme='light'],html:has(body[data-theme='light']){color-scheme:light;--bg:var(--bg-l);--bdr2:var(--bdr2-l);--txt3:var(--txt3-l);}
 *{scrollbar-width:thin;scrollbar-color:var(--bdr2) var(--bg);}
 html{overflow-x:hidden;overflow-y:scroll;}
 body{overflow-x:hidden;max-width:100vw;}
@@ -10250,7 +10430,7 @@ footer{background:var(--bg2);border-top:1px solid var(--bdr);padding:2.5rem 0;ma
 .sh-spin{display:inline-block;width:14px;height:14px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:shsp .7s linear infinite;vertical-align:-2px;margin-right:6px}.sh-btn.sh-busy{opacity:.6;cursor:wait}
 .sh-ovl{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}.sh-ovc{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:26px 32px;border-radius:16px;background:var(--bg2);color:var(--txt);border:1px solid var(--bdr);box-shadow:0 12px 40px rgba(0,0,0,.45);max-width:86vw}.sh-ovc small{opacity:.7}.sh-spin.big{width:34px;height:34px;border-width:3px;margin:0}
 .sh-okbox{text-align:center}.sh-okic{width:54px;height:54px;margin:4px auto 8px;border-radius:50%;background:#16a34a;color:#fff;font-size:30px;line-height:54px;font-weight:700;animation:shpop .35s ease}@keyframes shpop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
-.sh-sc{margin-top:8px;padding:12px 14px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg3)}.sh-sc p{margin:4px 0 8px;font-size:13px;opacity:.85}.sh-sh{display:flex;align-items:center;gap:8px;font-size:15px}.sh-dot{width:10px;height:10px;border-radius:50%;background:#9ca3af}.sh-dot.go{background:#f97316}.sh-dot.ok{background:#16a34a}.sh-dot.bad{background:#dc2626}.sh-dot.late{background:#d97706}
+.sh-pw{display:flex;gap:8px;align-items:center}.sh-pw .sh-in{flex:1}.sh-sc{margin-top:8px;padding:12px 14px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg3)}.sh-sc p{margin:4px 0 8px;font-size:13px;opacity:.85}.sh-sh{display:flex;align-items:center;gap:8px;font-size:15px}.sh-dot{width:10px;height:10px;border-radius:50%;background:#9ca3af}.sh-dot.go{background:#f97316}.sh-dot.ok{background:#16a34a}.sh-dot.bad{background:#dc2626}.sh-dot.late{background:#d97706}
 .sh-pc{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--bg2)}.sh-pc.ok{background:#16a34a22;color:#16a34a}.sh-pc.bad{background:#dc262622;color:#dc2626}.sh-pc.wait{background:#f9731622;color:#f97316}.sh-sc.bad{border-color:#dc2626;color:#dc2626}
 
 .sh-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))!important;gap:14px!important}.sh-card{align-items:stretch!important;text-align:left!important;padding:0 0 12px!important;overflow:hidden;gap:3px!important}.sh-card>b,.sh-card>small,.sh-card>span{padding:0 12px}.sh-card>b{margin-top:8px}
@@ -11575,6 +11755,11 @@ function shSave(S, j){ S.sess = j; try { if(j) localStorage.setItem(S.sk, JSON.s
 function shPkg(p, id){ var k = null; (p.packages||[]).forEach(function(x){ if(x.id === id) k = x; }); return k; }
 function shLine(S, l){ var p = S.pm[l.p], k = shPkg(p, l.k); return (k ? k.price : p.price) * (l.q||1); }
 function shTotal(S){ var t = 0; S.lines.forEach(function(l){ t += shLine(S, l); }); return t; }
+function shRemKey(S, f){ return 'shrem_' + (S.cfg.shop || 'x') + '_' + f.id; }
+function shRemGet(S, f){ try { return localStorage.getItem(shRemKey(S, f)) || ''; } catch(x) { return ''; } }
+function shRemSave(S){
+  try { S.lines.forEach(function(l){ S.cfg.fields.forEach(function(f){ if(f.rem && l.f[f.id]) localStorage.setItem(shRemKey(S, f), String(l.f[f.id]).slice(0, 300)); }); }); } catch(x) {}
+}
 function shMoney(S, n){ return S.cfg.cur + ' ' + n; }
 async function shRaw(S, payload){
   var r = await fetch(S.script, { method:'POST', body: JSON.stringify(payload) });
@@ -11662,6 +11847,7 @@ function shAct(S, a){
   else if(act === 'again'){ S.lines = []; S.order = null; S.view = 'gallery'; S.ref = 'r'+Math.random().toString(36).slice(2)+Date.now().toString(36); S.t0 = Date.now(); }
   else if(act === 'check'){ shCheck(S); return; }
   else if(act === 'mref'){ shMineRefresh(S); return; }
+  else if(act === 'pw'){ var pi = a.parentNode.querySelector('input'); if(pi){ var show = pi.type === 'password'; pi.type = show ? 'text' : 'password'; a.textContent = show ? 'Hide' : 'Show'; } return; }
   else if(act === 'fref'){ shFeedRefresh(S); return; }
   shRender(S);
 }
@@ -11682,7 +11868,7 @@ async function shSubmit(S){
   S.busy = true; S.msg = ''; shRender(S);
   try {
     var r = await shPost(S, { type:'shoporder', whatsapp:S.wa, elapsed: Date.now()-S.t0, clientRef:S.ref, hp:'', items: S.lines.map(function(l){ return { p:l.p, k:l.k, q:l.q, f:l.f }; }) });
-    if(r && r.ok && r.orderId){ shMineAdd(S, r); S.order = r; S.view = 'done'; S.busy = false; shRender(S); shReceipt(S); if(S.cfg.feed) shFeed(S); return; }
+    if(r && r.ok && r.orderId){ shRemSave(S); shMineAdd(S, r); S.order = r; S.view = 'done'; S.busy = false; shRender(S); shReceipt(S); if(S.cfg.feed) shFeed(S); return; }
     var c = r && r.code;
     if(c === 'EXPIRED' || c === 'BAD_SESSION'){ shSave(S, null); S.msg = shTx(S,'expired'); }
     else S.msg = (r && (r.error || r.message)) || shTx(S,'nonet');
@@ -11801,10 +11987,12 @@ function shRender(S){
       if(p.allowQty) h += '<label class="sh-lb">' + T('qty') + '<input class="sh-in" type="number" min="1" max="20" value="' + (l.q||1) + '" data-f="l|' + i + '|q"></label>';
       if(C.fields.length) h += '<div class="sh-h2">' + T('info') + '</div>';
       C.fields.forEach(function(f){
+        if(!l.f[f.id] && f.rem){ var rv = shRemGet(S, f); if(rv) l.f[f.id] = rv; }
         var v = l.f[f.id] || '', nm = 'data-f="l|' + i + '|' + e(f.id) + '"', inp;
         if(f.type === 'longtext') inp = '<textarea class="sh-in" ' + nm + ' placeholder="' + e(f.ph) + '">' + e(v) + '</textarea>';
         else if(f.type === 'select') inp = '<select class="sh-in" ' + nm + '><option value=""></option>' + (f.options||[]).map(function(o){ return '<option' + (o === v ? ' selected' : '') + '>' + e(o) + '</option>'; }).join('') + '</select>';
         else if(f.type === 'checkbox') inp = '<input type="checkbox" ' + nm + (v ? ' checked' : '') + '>';
+        else if(f.type === 'password') inp = '<span class="sh-pw"><input class="sh-in" ' + nm + ' type="password" autocomplete="new-password" value="' + e(v) + '" placeholder="' + e(f.ph) + '"><button type="button" class="sh-link" data-a="pw">Show</button></span>';
         else inp = '<input class="sh-in" ' + nm + ' type="' + (f.type === 'number' ? 'number' : 'text') + '" value="' + e(v) + '" placeholder="' + e(f.ph) + '">';
         h += '<label class="sh-lb">' + e(f.label) + (f.required ? ' *' : '') + inp + '</label>';
       });
@@ -11828,7 +12016,8 @@ function shRender(S){
     o.items.forEach(function(i){ h += '<div class="sh-sum"><span>' + e(i.title) + (i.label ? ' - ' + e(i.label) : '') + (i.qty > 1 ? ' x' + i.qty : '') + '</span><b>' + shMoney(S, i.price * i.qty) + '</b></div>'; });
     h += '<div class="sh-sum tot"><span>' + T('total') + '</span><b>' + shMoney(S, o.total) + '</b></div>';
     if(C.pay) h += '<div class="sh-h2">' + T('pay') + '</div><div class="sh-pay">' + e(C.pay.split('{id}').join(o.orderId)) + '</div>';
-    var msg = encodeURIComponent((C.title || 'Order') + ' ' + o.orderId + ' - ' + shTx(S,'total') + ' ' + shMoney(S, o.total));
+    var nl = String.fromCharCode(10), ilines = (o.items || []).map(function(i){ return i.title + (i.label ? ' - ' + i.label : '') + (i.qty > 1 ? ' x' + i.qty : ''); });
+    var msg = encodeURIComponent((C.title || 'Order') + ' ' + o.orderId + nl + ilines.join(nl) + nl + shTx(S,'total') + ': ' + shMoney(S, o.total));
     var wn = String(C.wa||'').split('+').join('').split(' ').join('').split('-').join('');
     h += '<div class="sh-row">' + (wn ? '<a class="sh-btn" target="_blank" rel="noopener" href="https://wa.me/' + e(wn) + '?text=' + msg + '">' + T('wasend') + '</a><a class="sh-btn alt" href="sms:' + e(C.wa) + '?body=' + msg + '">' + T('sms') + '</a>' : '') + '<button class="sh-btn alt" data-a="dl">' + T('dl') + '</button><button class="sh-btn alt" data-a="again">' + T('again') + '</button></div></div>';
   }
@@ -13561,6 +13750,9 @@ WHAT THE OWNER CANNOT DO (do not tell them how to bypass this)
 - Add or delete pages, add any block other than Custom Block, delete blocks made by the developer, import a project from a file or folder, or start a blank project.
 - If they ask for any of these, explain it is locked in Site Manager and they should contact their developer.
 
+ORDER EMAIL (Shop block)
+The Shop block has a collapsed Order email section. When on, customers get an email with their order and the payment number. The payment number(s) are under Payment and contact (11 digits starting with 0, for example 01712345678, no spaces). A free Gmail account sends about 100 order emails a day; after that orders are still saved but the email is skipped and not retried. If emails are not arriving, check the Mail tab in the Google Sheet for the reason, and that the script was updated and authorized again after the last change.
+
 CAREFUL SETTINGS
 Shop, Review and Form blocks have a collapsed "More settings" area. It holds the Script URL, Client ID, tab names, field IDs, limits and similar. These connect the website to its Google Sheet. Tell the owner to leave them alone unless the developer asks. If they changed something and the shop or reviews stopped working, ask them to change it back (undo if possible) and contact the developer. If an orange warning says the script was changed, only the developer can fix it by updating the Google Apps Script.
 
@@ -13664,7 +13856,7 @@ function sbHelpLockHTML() {
     ${tile('2. Edit', 'Click a block in the list on the left, then change its fields on the right. The preview updates as you type. Use the ' + k('eye button') + ' on a block to hide or show it. Blocks cannot be deleted, only hidden.')}
     ${tile('3. Your own blocks', 'You can add a ' + k('Custom Block') + ' with ' + k('+ Add Block') + '. You can delete the Custom Blocks you added yourself. No other block type or page can be added.')}
     ${tile('4. Images', 'Open the image field in a block and upload a new picture, or paste a link. Use JPG, PNG or WebP, ideally under 2 MB.')}
-    ${tile('5. Shop prices and products', 'You can edit products, prices and packages in the Shop block. After a change, the ' + k('Show script') + ' button turns gold. That means the shop script must be updated. Press it, copy the script and paste it into your Google Apps Script as your developer showed you, or send it to your developer.')}
+    ${tile('5. Shop prices and products', 'You can edit products, prices and packages in the Shop block. After a change, the ' + k('Show script') + ' button turns gold. That means the shop script must be updated. Press it, copy the script and paste it into your Google Apps Script as your developer showed you, or send it to your developer. The Shop block also has an ' + k('Order email') + ' section (closed by default). It sends each customer their payment details after they order. Enter your payment number under ' + k('Payment and contact') + '. Free Gmail sends about 100 order emails per day; orders over that are still saved but get no email.')}
     ${tile('6. Publish', 'The ' + k('GitHub icon') + ' at the top shows the state. Orange means you have changes that are not published. Green means published. Click it to publish, wait one or two minutes, then reload your website with Ctrl+Shift+R. If your site still looks old, open ' + k('Export') + ' and choose ' + k('Force republish') + '.')}
     ${tile('7. Undo, backup, restore', 'The undo arrow reverts your last change. ' + k('Export  Export All Pages (.zip)') + ' saves a backup. ' + k('Export  Import from GitHub') + ' reloads the published version if you want to start over.')}
     ${tile('8. Settings to leave alone', 'Script URL, Client ID, tab names and field IDs connect your site to Google. Do not change them unless your developer asks. Look for the section named ' + k('More settings') + ' only if you know why.')}
