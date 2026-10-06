@@ -1691,7 +1691,7 @@ function sbBusy(on, msg) {
 }
 function ghSigHash(s) { let h = 2166136261; for(let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + s.length; }
 function ghSig() {
-  try { sbSyncActivePage(); const m = Object.assign({}, S.meta); delete m.github; return ghSigHash(JSON.stringify({ b: S.blocks, m: m })); } catch(e) { return ''; }
+  try { sbSyncActivePage(); const m = Object.assign({}, S.meta); delete m.github; if(m.google && typeof m.google === 'object') { m.google = Object.assign({}, m.google); delete m.google.scriptSeen; } return ghSigHash(JSON.stringify({ b: S.blocks, m: m })); } catch(e) { return ''; }
 }
 var _ghSyncSigs = {}, _ghDirtyT = null;
 function ghSigKey() { return 'sb_ghsig_' + (_sbCurrentId || 'x'); }
@@ -2978,6 +2978,7 @@ function renderEditor() {
     ${renderBlockForm(b)}
   </div>`;
   sbGroupAdvanced(b);
+  if(['shopblock','reviewblock','formblock'].includes(b.type)) { try { sbgPingMaybe(sbgEff(b.data).scriptUrl); } catch(e) {} }
   // Restore collapse states after re-render
   restoreCollapseState();
   // If this is a form block, immediately check for duplicate labels
@@ -4813,12 +4814,6 @@ function sbgGenerateScript(groupKey) {
   return { code, cfg, hash: sbgHash(json) };
 }
 // ── Setting changes from the panel ─────────────────────────────────
-function sbgAllBlocks() {
-  const seen = new Set(), out = [];
-  const add = bl => (bl || []).forEach(b => { if(b && !seen.has(b.id)) { seen.add(b.id); out.push(b); } });
-  add(S.blocks); (S.meta.pages || []).forEach(p => add(p.blocks));
-  return out;
-}
 function sbgCidAudit() {
   const proj = String(sbgG().clientId || '').trim();
   return sbgAllBlocks().filter(b => b.data && String(b.data.clientId || '').trim() && String(b.data.clientId).trim() !== proj);
@@ -4933,6 +4928,7 @@ async function sbgTest(scopeId) {
         out.kind = 'warn';
         out.msg = 'This is an older, form-only script. It still works for normal forms. To use Google sign-in or reviews, paste the new script and deploy a New version.';
       } else {
+        _sbgDep[sbgScriptKey(eff.scriptUrl)] = { at: Date.now(), ok: j.version !== undefined, version: j.version, hash: j.hash };
         const gi = sbgGenerateScript(eff.scriptUrl);
         const problems = [];
         if(eff.clientId && j.clientId !== eff.clientId) problems.push(j.clientId ? 'The script has a different Client ID than the one in Site Builder.' : 'The script has no Client ID.');
@@ -5033,10 +5029,32 @@ function sbgPanelHTML(id, kind) {
 // Updates the dynamic bits of every visible panel without re-rendering (keeps typing focus).
 function sbgScriptKey(url) { return String(url || 'default'); }
 function sbgScriptHash(url) { try { return sbgHash(SBG_VERSION + JSON.stringify(sbgBuildConfig(url))); } catch(e) { return ''; } }
+var _sbgDep = {};
+function sbgDeployedState(url) {
+  const d = _sbgDep[sbgScriptKey(url)];
+  if(!d || !d.ok || Date.now() - d.at > 10 * 60000) return null;
+  try { const gi = sbgGenerateScript(url); return { stale: d.version !== SBG_VERSION || d.hash !== gi.hash, older: d.version !== SBG_VERSION, version: d.version }; } catch(e) { return null; }
+}
 function sbgScriptStale(url) {
+  const dep = sbgDeployedState(url);
+  if(dep) return dep.stale;
   const h = sbgScriptHash(url); if(!h) return false;
   const seen = sbgG().scriptSeen || {};
   return seen[sbgScriptKey(url)] !== h;
+}
+async function sbgPingMaybe(url, force) {
+  if(!url || sbgUrlProblem(url)) return;
+  const key = sbgScriptKey(url), cur = _sbgDep[key];
+  if(!force && cur && Date.now() - cur.at < 90000) return;
+  _sbgDep[key] = Object.assign({}, cur || {}, { at: Date.now() });
+  const ctrl = new AbortController(), to = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const r = await fetch(url + '?type=ping&_=' + Date.now(), { signal: ctrl.signal, cache: 'no-store' });
+    const j = JSON.parse(await r.text());
+    _sbgDep[key] = { at: Date.now(), ok: !!(j && j.version !== undefined), version: j.version, hash: j.hash };
+  } catch(e) { _sbgDep[key] = { at: Date.now(), ok: false }; }
+  clearTimeout(to);
+  try { sbgRefreshPanels(); } catch(e) {}
 }
 function sbgRefreshPanels() {
   try { document.querySelectorAll('[data-shbanner]').forEach(el => shRefresh(el.getAttribute('data-shbanner'))); } catch(e) {}
@@ -5365,8 +5383,9 @@ function shHash(d) { const o = JSON.stringify([d.currency, d.mode, d.tabPrefix, 
 function shBannerHTML(d) {
   const eff = sbgEff(d);
   if(!sbgScriptStale(eff.scriptUrl)) return '';
-  const seen = (sbgG().scriptSeen || {})[sbgScriptKey(eff.scriptUrl)];
-  return '<b>The Apps Script needs updating.</b> ' + (seen ? 'Something changed that the script depends on (products, prices, fields, email settings or other block settings). ' : 'This version of the script has not been copied yet. ') + 'Open <b>Show script</b>, copy it into Apps Script (replace everything), save, run <b>authorize</b> if asked, then Deploy &gt; Manage deployments &gt; pencil &gt; <b>New version</b>. Until then your live shop keeps using the old script.';
+  const dep = sbgDeployedState(eff.scriptUrl), seen = (sbgG().scriptSeen || {})[sbgScriptKey(eff.scriptUrl)];
+  const why = dep ? (dep.older ? 'The script on Google is an older version (' + String(dep.version).replace(/[<>&]/g, '') + ').' : 'The script on Google does not match your current settings (products, prices, fields, selling mode, email or other block settings).') : (seen ? 'Something changed that the script depends on (products, prices, fields, selling mode, email or other block settings).' : 'This version of the script has not been copied yet.');
+  return '<b>The Apps Script needs updating.</b> ' + why + ' Open <b>Show script</b>, copy it into Apps Script (replace everything), save, run <b>authorize</b> if asked, then Deploy &gt; Manage deployments &gt; pencil &gt; <b>New version</b>. Then press <b>Test connection</b>. Until then your live shop keeps using the old script.';
 }
 function shCurBad(d) {
   const c = String((d && d.currency) || '').trim();
@@ -9185,7 +9204,7 @@ function sbUndo() {
   _redoStack.push(_undoStack.pop());
   const snap = JSON.parse(_undoStack[_undoStack.length-1]);
   _undoPaused = true;
-  S.blocks = snap.blocks; { const _gh = S.meta && S.meta.github; S.meta = snap.meta; if(_gh) S.meta.github = _gh; }
+  S.blocks = snap.blocks; { const _gh = S.meta && S.meta.github, _seen = S.meta && S.meta.google && S.meta.google.scriptSeen; S.meta = snap.meta; if(_gh) S.meta.github = _gh; if(_seen) { if(!S.meta.google || typeof S.meta.google !== 'object') S.meta.google = {}; S.meta.google.scriptSeen = _seen; } }
   document.getElementById('tn-title').value = S.meta.title||'';
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
@@ -9204,7 +9223,7 @@ function sbRedo() {
   const snap = JSON.parse(_redoStack.pop());
   _undoStack.push(JSON.stringify(snap));
   _undoPaused = true;
-  S.blocks = snap.blocks; { const _gh = S.meta && S.meta.github; S.meta = snap.meta; if(_gh) S.meta.github = _gh; }
+  S.blocks = snap.blocks; { const _gh = S.meta && S.meta.github, _seen = S.meta && S.meta.google && S.meta.google.scriptSeen; S.meta = snap.meta; if(_gh) S.meta.github = _gh; if(_seen) { if(!S.meta.google || typeof S.meta.google !== 'object') S.meta.google = {}; S.meta.google.scriptSeen = _seen; } }
   document.getElementById('tn-title').value = S.meta.title||'';
   tnSyncFilenameDisplay();
   sbSyncFilenameBadge();
@@ -11958,6 +11977,7 @@ async function shSubmit(S){
     if(r && r.ok && r.orderId){ shRemSave(S); shMineAdd(S, r); S.order = r; S.view = 'done'; S.busy = false; shRender(S); shReceipt(S); if(S.cfg.feed) shFeed(S); return; }
     var c = r && r.code;
     if(c === 'EXPIRED' || c === 'BAD_SESSION'){ shSave(S, null); S.msg = shTx(S,'expired'); }
+    else if(c === 'ITEMS' && S.lines.length > 1){ S.msg = 'This shop cannot take several items in one order right now. Please order one item at a time, or contact the shop.'; }
     else S.msg = (r && (r.error || r.message)) || shTx(S,'nonet');
   } catch(e){ S.msg = shTx(S,'nonet'); }
   S.busy = false; shRender(S);
