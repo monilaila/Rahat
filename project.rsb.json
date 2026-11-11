@@ -8,7 +8,7 @@
     "library": 1
   },
   "createdAt": 1790686085897,
-  "lastSaved": 1794421541613,
+  "lastSaved": 1794421797985,
   "theme": {
     "id": "b6f24ab0-f726-4203-a81d-243ba6b1a8ae",
     "type": "theme",
@@ -203,6 +203,13 @@
               "body": "A tiny house with a story. Everything inside actually works, even the stove.",
               "img": "images/img-376da3df0f1ddb80.jpg",
               "imagePos": "right"
+            },
+            {
+              "eyebrow": "02 — Something",
+              "heading": "Aquarium hobby",
+              "body": "A tiny ecosystem. In my living space.",
+              "img": "images/img-c16d75b227971c67.jpg",
+              "imagePos": "left"
             }
           ]
         },
@@ -232,6 +239,9 @@
   "github": {
     "owner": "monilaila",
     "repo": "Rahat",
-    "branch": "main"
+    "branch": "main",
+    "lastSyncStatus": "success",
+    "syncedAt": 1794421562777,
+    "syncedFingerprint": "1c75y6z_6731"
   }
 }
