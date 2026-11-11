@@ -8,7 +8,7 @@
     "library": 1
   },
   "createdAt": 1790686085897,
-  "lastSaved": 1794420971866,
+  "lastSaved": 1794421541613,
   "theme": {
     "id": "b6f24ab0-f726-4203-a81d-243ba6b1a8ae",
     "type": "theme",
@@ -201,7 +201,7 @@
               "eyebrow": "01 — Something",
               "heading": "My miniature house",
               "body": "A tiny house with a story. Everything inside actually works, even the stove.",
-              "img": "",
+              "img": "images/img-376da3df0f1ddb80.jpg",
               "imagePos": "right"
             }
           ]
