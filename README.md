@@ -18,7 +18,7 @@ Three colors drive the whole site's look, set in Theme → Brand Colors:
 
 | Role | Current value | Used for |
 |---|---|---|
-| Primary | `#ffb347` | Accents only — selection states, one CTA, a drop-cap. Not a default text color. |
+| Primary | `#ffffff` | Accents only — selection states, one CTA, a drop-cap. Not a default text color. |
 | Warning | `#e07a7a` | Errors, required-field markers, destructive actions only. |
 | Base (white) | `#ffffff` | The default color for nearly all text on the site — headings, body copy, labels. |
 
