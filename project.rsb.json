@@ -1,5 +1,5 @@
 {
-  "id": "b994512f-f18c-4ac8-8aa2-77d4fd1fdcd0",
+  "id": "da18df1d-15c3-49d8-b6e2-f13d8cc35c1a",
   "name": "gag",
   "type": "fullsite",
   "versions": {
@@ -8,7 +8,7 @@
     "library": 1
   },
   "createdAt": 1790686085897,
-  "lastSaved": 1794418909523,
+  "lastSaved": 1794420971866,
   "theme": {
     "id": "b6f24ab0-f726-4203-a81d-243ba6b1a8ae",
     "type": "theme",
@@ -25,15 +25,16 @@
     "glassDarkColor": "#14161a",
     "dispPattern": "default",
     "customDispUrl": "",
-    "faviconUrl": "",
+    "faviconUrl": "images/img-42b5a70b4e08231f.jpg",
     "seoSiteName": "",
     "seoDefaultDescription": "",
-    "seoDefaultImage": "",
-    "colorPrimary": "#ffb347",
+    "seoDefaultImage": "images/img-83a53206a680f5ea.jpg",
+    "colorPrimary": "#ffffff",
     "colorWarning": "#e07a7a",
     "colorWhite": "#ffffff",
     "bgImages": [
-      "images/img-f1e953131d1689fd.jpg"
+      "images/img-10fcaf60e1b82e97.png",
+      "images/img-612c9e12e43307db.jpg"
     ],
     "bgFocusX": 73,
     "bgInterval": 30,
@@ -57,22 +58,24 @@
     "trackerCode": "",
     "trackerCodeName": "",
     "logoText": "",
-    "footerQuote": "",
+    "footerQuote": "“Be real. Keep your old things. Keep making stuff.”",
     "socials": [
       {
         "label": "Instagram",
-        "url": ""
+        "url": "https://www.instagram.com/rahatimranhossen/"
       },
       {
         "label": "Email",
-        "url": ""
+        "url": "mailto:imranrahat616@gmail.com"
       }
     ],
-    "copyrightText": "",
-    "creditsList": [],
+    "copyrightText": "© Rahat. All rights reserved",
+    "creditsList": [
+      "Imran Hossen Rahat"
+    ],
     "quickLinks": [],
-    "contactEmail": "",
-    "contactPhone": "",
+    "contactEmail": "imranrahat616@gmail.com",
+    "contactPhone": "01893279266",
     "contactAddress": ""
   },
   "pages": [
@@ -105,6 +108,117 @@
           "bannerDescription": "A short paragraph describing this section.",
           "overlayStrength": 65,
           "overlayBlur": 10
+        },
+        {
+          "id": "60c48558-3068-41f9-b72d-8b63b38bf174",
+          "type": "rich_text",
+          "version": 1,
+          "title": "A little about me",
+          "titleAlign": "center",
+          "subtitle": "",
+          "paragraphs": [
+            {
+              "type": "text",
+              "content": "Hi, I’m Rahat. I like making things, and I never stay with just one. Electronics, aquariums, code, miniatures, whatever is on my desk that week. I’m not a professional at any of it. I just build, and when something works, I share it here."
+            }
+          ]
+        },
+        {
+          "id": "73a97fe7-d6f5-40bf-bb47-203a3b8e6dce",
+          "type": "para_boxes",
+          "version": 1,
+          "title": "",
+          "titleAlign": "left",
+          "headerAlign": "center",
+          "boxes": [
+            {
+              "header": "Build",
+              "text": "Apps, small devices and anything I’m curious about."
+            },
+            {
+              "header": "Fix",
+              "text": "Phones, laptops, routers and fridges. I’ll help if I can."
+            },
+            {
+              "header": "Share",
+              "text": "What worked, what didn’t, and how to do it yourself."
+            }
+          ]
+        },
+        {
+          "id": "8fbe2aa0-30ce-4956-bc87-12605afa7f48",
+          "type": "gallery",
+          "version": 1,
+          "title": "",
+          "titleAlign": "left",
+          "overlayStrength": 55,
+          "overlayBlur": 8,
+          "items": [
+            {
+              "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM2NjdlZWEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM3NjRiYTIiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==",
+              "title": "Fenn Drop",
+              "desc": "Share files to any device with a browser.",
+              "linkUrl": "",
+              "linkText": "View Project"
+            },
+            {
+              "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmMDkzZmIiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmNTU3NmMiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==",
+              "title": "Smart Switchboard",
+              "desc": "One smart board that controls four appliances.",
+              "linkUrl": "",
+              "linkText": "View Project"
+            },
+            {
+              "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM0ZmFjZmUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwMGYyZmUiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==",
+              "title": "Fabric Pattern Designer",
+              "desc": "Design patterns for our local fabric on a computer",
+              "linkUrl": "",
+              "linkText": "View Project"
+            }
+          ]
+        },
+        {
+          "id": "825661ff-0c8b-4550-8118-cff2578a9adb",
+          "type": "split_image",
+          "version": 1,
+          "title": "",
+          "titleAlign": "left",
+          "imgBefore": "images/img-03b04e930254a22b.png",
+          "imgAfter": "images/img-08cbc6297c2b7cec.jpg",
+          "alt": "",
+          "aspectRatio": "original",
+          "sizeScale": 100,
+          "orientation": "horizontal"
+        },
+        {
+          "id": "c5334581-4ecc-494b-b59e-6b492d92eb9e",
+          "type": "text_image",
+          "version": 1,
+          "title": "",
+          "titleAlign": "left",
+          "blocks": [
+            {
+              "eyebrow": "01 — Something",
+              "heading": "My miniature house",
+              "body": "A tiny house with a story. Everything inside actually works, even the stove.",
+              "img": "",
+              "imagePos": "right"
+            }
+          ]
+        },
+        {
+          "id": "2da998d1-938a-4335-b47a-2a4309923d56",
+          "type": "cta",
+          "version": 1,
+          "title": "Found something useful?",
+          "desc": "Tell me what helped, or ask me anything. Email button and Instagram button.",
+          "btn1Text": "",
+          "btn1Url": "",
+          "btn1OpenNewTab": false,
+          "btn2Text": "",
+          "btn2Url": "",
+          "btn2OpenNewTab": false,
+          "img": ""
         }
       ],
       "seo": {}
