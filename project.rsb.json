@@ -1,0 +1,123 @@
+{
+  "id": "b994512f-f18c-4ac8-8aa2-77d4fd1fdcd0",
+  "name": "gag",
+  "type": "fullsite",
+  "versions": {
+    "builder": "2.0.0",
+    "project": 1,
+    "library": 1
+  },
+  "createdAt": 1790686085897,
+  "lastSaved": 1794418909523,
+  "theme": {
+    "id": "b6f24ab0-f726-4203-a81d-243ba6b1a8ae",
+    "type": "theme",
+    "version": 1,
+    "fontBody": "sans-serif",
+    "fontHeading": "sans-serif",
+    "borderRadius": 30,
+    "glassBlur": 5,
+    "glassScale": 45,
+    "glassBrightness": 0,
+    "glassAutoDetect": false,
+    "glassAutoIntensity": 50,
+    "glassBrightColor": "#ffffff",
+    "glassDarkColor": "#14161a",
+    "dispPattern": "default",
+    "customDispUrl": "",
+    "faviconUrl": "",
+    "seoSiteName": "",
+    "seoDefaultDescription": "",
+    "seoDefaultImage": "",
+    "colorPrimary": "#ffb347",
+    "colorWarning": "#e07a7a",
+    "colorWhite": "#ffffff",
+    "bgImages": [
+      "images/img-f1e953131d1689fd.jpg"
+    ],
+    "bgFocusX": 73,
+    "bgInterval": 30,
+    "fishVisible": true,
+    "fishCount": 25,
+    "fishImages": [
+      "fishImage/img-f382d076538c9dce.png",
+      "fishImage/img-4258c04bb12c50d4.png",
+      "fishImage/img-812d0ddcefbff87a.png",
+      "fishImage/img-1eea1c7af696c5cf.png",
+      "fishImage/img-11c263802f24453a.png",
+      "fishImage/img-4a87df7611fb6ae0.png",
+      "fishImage/img-8fe3dbb354dc8865.png",
+      "fishImage/img-e740cf6078c20da7.png",
+      "fishImage/img-751a312f834e60dd.png",
+      "fishImage/img-1cb4d41b8bd1dfed.png"
+    ],
+    "fishSize": 33,
+    "fishSpeed": 0.03,
+    "fishIconSvg": null,
+    "trackerCode": "",
+    "trackerCodeName": "",
+    "logoText": "",
+    "footerQuote": "",
+    "socials": [
+      {
+        "label": "Instagram",
+        "url": ""
+      },
+      {
+        "label": "Email",
+        "url": ""
+      }
+    ],
+    "copyrightText": "",
+    "creditsList": [],
+    "quickLinks": [],
+    "contactEmail": "",
+    "contactPhone": "",
+    "contactAddress": ""
+  },
+  "pages": [
+    {
+      "id": "5a3139c8-ac3a-4791-9b9d-5681d292bf2b",
+      "title": "Home",
+      "filename": "index",
+      "kind": "managed",
+      "blocks": [
+        {
+          "id": "dbc06483-2c10-4732-ad05-97350ac6f154",
+          "type": "hero",
+          "version": 1,
+          "heroType": "default",
+          "bigLines": [
+            "Hi I'm",
+            "RAHAT"
+          ],
+          "centerText": "Hi, I am Rahat",
+          "smallText": "TRYING TO LIVE AN HONEST AND PEACEFUL LIFE",
+          "extraHtml": "",
+          "kicker": "FEATURED",
+          "showcaseImg": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmYTcwOWEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZWUxNDAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==",
+          "ctaText": "View Project",
+          "ctaUrl": "#",
+          "metaText": "Latest Post",
+          "bannerImg": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzMGNmZDAiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMzMzA4NjciLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==",
+          "bannerHeading": "Big Headline Here",
+          "bannerSubheading": "A supporting line of text",
+          "bannerDescription": "A short paragraph describing this section.",
+          "overlayStrength": 65,
+          "overlayBlur": 10
+        }
+      ],
+      "seo": {}
+    }
+  ],
+  "assets": [],
+  "customBlocks": [],
+  "animationPresets": [],
+  "seo": {},
+  "meta": {},
+  "github": {
+    "owner": "monilaila",
+    "repo": "Rahat",
+    "branch": "main"
+  }
+}
